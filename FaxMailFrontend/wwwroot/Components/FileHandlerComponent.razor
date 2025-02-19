@@ -1,0 +1,102 @@
+﻿@inject NavigationManager navigationManager
+@inject ErrorHandler eh
+@using FaxMailFrontend.Data
+@namespace FaxMailFrontend.Components
+
+<h3 style="border: 5px solid black;">Dateien</h3>
+
+@if (fileHandler?.Files != null)
+{
+    @if (fileHandler.Files.Count == 0)
+    {
+        <tr style="border: 2px solid black;">
+            <td colspan="4">Keine Dateien vorhanden</td>
+        </tr>
+    }
+    else
+    {
+        <table tr style="border: 10px solid black;">
+            <thead>
+                <tr style="border: 2px solid black;">
+                    <th>Filename</th>
+                    <th>Save</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in fileHandler.Files)
+                {
+                    <tr style="border: 2px solid black;">
+                        <td>@file.FileName</td>
+                        <td>
+                            <button @onclick="() => SaveFile(file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <img src="images/save.svg" alt="Save" style="width: 50px; height: 50px;" />
+                            </button>
+                        </td>
+                        <td>
+                            <button @onclick="() => EditFile(file.FileName)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <img src="@(file.isSaved ? "images/edit-green.svg" : "images/edit-red.svg")" alt="Edit" style="width: 50px; height: 50px;" />
+                            </button>
+                        </td>
+                        <td>
+                            <button @onclick="() => DeleteFile(file.FileName)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <img src="images/delete.svg" alt="Delete" style="width: 50px; height: 50px;" />
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+}
+
+
+@code {
+    [Parameter]
+    public FileHandler? fileHandler { get; set; }
+    [Parameter]
+    public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
+    [Parameter]
+    public EventCallback<string> OnPathChanged { get; set; }
+    
+    private string? Dateiname { get; set; }
+    
+    private async Task EditFile(string filename)
+    {
+        if (fileHandler is not null)
+        {
+            await OnPathChanged.InvokeAsync(filename);
+            StateHasChanged();
+        }
+    }
+    
+    private async Task SaveFile(FileInformation file)
+    {
+        if (fileHandler is not null)
+        {
+            file.isSaved = true;
+            await OnFileHandlerChanged.InvokeAsync(fileHandler);
+            StateHasChanged();
+        }
+    }
+
+    private void DeleteFile(string filename)
+    {
+        if (fileHandler is not null)
+        {
+            if (fileHandler.DeleteFile(filename))
+            {
+                fileHandler.LoadFiles();
+                StateHasChanged();
+            }
+            else
+            {
+                eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                eh.EC = ErrorCode.KeineDateiGeloescht;
+                navigationManager.NavigateTo($"/ErrorPage");
+            }
+        }
+    }
+}

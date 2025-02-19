@@ -1,0 +1,12 @@
+﻿.drop-zone {
+    border: 5px dashed #f00f;
+    border-radius: 8px;
+    padding: 20px;
+    width: 60%;
+    min-height: 100px;
+    margin: 0 auto;
+}
+
+-drop-zone.hover {
+    border-style: solid;
+}
