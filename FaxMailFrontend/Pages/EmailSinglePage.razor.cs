@@ -3,13 +3,14 @@ using FaxMailFrontend.ViewModel;
 using MailDLL;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Configuration;
 using Microsoft.JSInterop;
 
 namespace FaxMailFrontend.Pages
 {
 	public partial class EmailSinglePage
 	{
-		int MaxFileSize = 1024 * 1024 * 1024;
+		int MaxFileSize = 1;
 		IJSObjectReference? _module;
 		IJSObjectReference? _dropzoneInstance;
 		ElementReference dropZoneElement;
@@ -30,6 +31,8 @@ namespace FaxMailFrontend.Pages
 		protected override async Task OnInitializedAsync()
 		{
 			basePath = env.WebRootPath + "\\Files";
+			MaxFileSize = GetMaxMB() * 1024 * 1024;
+			
 		}
 
 		private void Logout()
@@ -37,7 +40,10 @@ namespace FaxMailFrontend.Pages
 			// Implementiere die Logout-Logik hier
 			navigationManager.NavigateTo("/LogOutPage");
 		}
-
+		public int GetMaxMB()
+		{
+			return Configuration.GetValue<int>("FileSettings:MaxMB");
+		}
 		protected override async Task OnAfterRenderAsync(bool firstRender)
 		{
 			if (firstRender)
@@ -46,6 +52,7 @@ namespace FaxMailFrontend.Pages
 				{
 					_module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/dropZone.js");
 					_dropzoneInstance = await _module.InvokeAsync<IJSObjectReference>("initializeFileDropZone", dropZoneElement, inputFileContainer);
+					//logger.LogError("Dropzone initialized");
 				}
 				catch (Exception ex)
 				{
