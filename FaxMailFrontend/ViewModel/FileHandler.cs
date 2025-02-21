@@ -5,15 +5,31 @@ namespace FaxMailFrontend.ViewModel
 	public class FileHandler : IFileHandler
 	{
 		public List<FileInformation> Files { get; set; } = new List<FileInformation>();
-		public string UUID { get; set; } = Guid.NewGuid().ToString();
+		public string UUID { get; set; } = "";
 		public string Path { get; set; } = string.Empty;
 		public string ErrorMessage { get; set; } = string.Empty;
+		private int filecounter = 0;
+
+		public FileHandler()
+		{
+
+		}
 
 		public FileHandler(string basepath, string UUID)
 		{
 			Path = basepath;
 			this.UUID = UUID;
 			LoadFiles();
+		}
+
+		public void AddFile(string filename, byte[] filedata)
+		{
+			Files.Add(new FileInformation
+			{
+				ID = filecounter + 1,
+				FileName = filename,
+				FileData = filedata
+			});
 		}
 
 		public void LoadFiles()

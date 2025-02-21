@@ -1,0 +1,161 @@
+﻿@using DataAccessDLL.Services
+@using DataAccessDLL.Interfaces
+@using DataAccessDLL.Modell
+@using FaxMailFrontend.Data
+@using FaxMailFrontend.Components
+@inject NavigationManager navigationManager
+@inject IDokuService docService
+@inject IStammDatenService stammDatenService
+@inject ErrorHandler eh
+
+@namespace FaxMailFrontend
+@if (File != null)
+{
+    <div>
+        <p>
+            <h4>Dokumentenklasse für das File @File.FileName</h4>
+            <div class="dropdown-menus" style="display: flex; justify-content: space-between;">
+                <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                    <label for="category">Kategorie:</label>
+                    <select name="" id="category" @onchange="OnCategoryChange" style="width: 100%;">
+                        @foreach (var category in Categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </div>
+                @if (!string.IsNullOrEmpty(selectedCategory))
+                {
+                    <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                        <label for="unterkategorie">Unterkategorie:</label>
+                        <select id="unterkategorie" @onchange="OnSubCategoryChange" style="width: 100%;">
+                            @foreach (var unterkategorie in Unterkategorien)
+                            {
+                                <option value="@unterkategorie">@unterkategorie</option>
+                            }
+                        </select>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(selectedunterkategory))
+                {
+                    <div class="dropdown" style="flex: 1;">
+                        <label for="dokuKlasse">Dokumentenklasse:</label>
+                        <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%;">
+                            @foreach (var document in dokumente)
+                            {
+                                <option value="@document">@document</option>
+                            }
+                        </select>
+                    </div>
+                }
+            </div>
+        </p>
+        @if (@File.KanalartApproved)
+        {
+            <p>
+                <h2>Kanalart</h2>
+            </p>
+            @if (@File.OrdnungsbegriffAppoved)
+            {
+                <p>
+                    <h2>Ordnungsbegriff</h2>
+                </p>
+                @if (@File.SuchergebnisAppoved)
+                {
+                    <p>
+                        <h2>Suchergebnis Ordnungsbegriff</h2>
+                    </p>
+                    @if (@File.WeitereOB)
+                    {
+                        <p>
+                            <h2>Weitere Ordnungsbegriffe</h2>
+                        </p>
+                        @if (@File.Mailbody)
+                        {
+                            <p>
+                                <h2>Mailbody</h2>
+                            </p>
+                        }
+                    }
+                }
+            }
+            @if (@File.AbsendenApproved)
+            {
+                <p>
+                    <h2>Sichern oder Verwerfen</h2>
+                </p>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public FileInformation? File { get; set; }
+    private List<string> Categories = new();
+    private List<string> Unterkategorien = new();
+    private List<string> dokumente = new();
+    private string? selectedCategory;
+    private string? selectedunterkategory;
+    private string? dokumentenKlasse;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Categories = await docService.GettAllKategories();
+        }
+        catch (Exception ex)
+        {
+            eh.Systemmessage = ex.Message;
+            eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+            navigationManager.NavigateTo($"/ErrorPage");
+        }
+    }
+
+    private async Task OnCategoryChange(ChangeEventArgs e)
+    {
+        selectedCategory = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(selectedCategory))
+        {
+            try
+            {
+                Unterkategorien = await docService.GettAllSubKategoriesByKategory(selectedCategory);
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                eh.Systemmessage = ex.Message;
+                eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                navigationManager.NavigateTo($"/ErrorPage");
+            }
+        }
+    }
+    private async Task OnSubCategoryChange(ChangeEventArgs e)
+    {
+        selectedunterkategory = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(selectedunterkategory))
+        {
+            try
+            {
+                dokumente = await docService.GettAllDocumentsBySubkategory(selectedunterkategory!, selectedCategory!);
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                eh.Systemmessage = ex.Message;
+                eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                navigationManager.NavigateTo($"/ErrorPage");
+            }
+        }
+    }
+    protected async override Task OnParametersSetAsync()
+    {
+        base.OnParametersSet();
+        selectedCategory = null;
+        selectedunterkategory = null;
+        dokumentenKlasse = null;
+        Unterkategorien.Clear();
+        dokumente.Clear();
+    }
+}

@@ -1,8 +1,13 @@
-﻿using FaxMailFrontend.Data;
+﻿using CurrieTechnologies.Razor.SweetAlert2;
+using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
 using Microsoft.Identity.Web;
 using NLog.Web;
 using static MsgReader.Outlook.Storage;
+using DataAccessDLL.Interfaces;
+using DataAccessDLL.Modell;
+using DataAccessDLL.Services;
+
 
 namespace FaxMailFrontend
 {
@@ -30,10 +35,14 @@ namespace FaxMailFrontend
 				loggingBuilder.ClearProviders();
 				loggingBuilder.AddNLogWeb();
 			});
-
+			builder.Services.AddSweetAlert2();
 			builder.Services.AddScoped<IUserService, UserService>();
-			builder.Services.AddScoped<FileHandler>(provider => new FileHandler("", ""));
+			builder.Services.AddScoped<IDokuService, DokuService>();
+			builder.Services.AddScoped<IStammDatenService,StammDatenService>();
+			builder.Services.AddScoped<FileHandler>();
 			builder.Services.AddScoped<ErrorHandler>(provider => new ErrorHandler(ErrorCode.KeinFehler, ""));
+			builder.Services.AddScoped<IWorkingContext>(provider => new WorkingContext("Data Source=localhost;Initial Catalog=Nifi;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"));
+			builder.Services.AddScoped<IStammDatenContext>(provider => new StammDatenContext("Data Source=localhost;Initial Catalog=StammDaten;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")); 
 			builder.Configuration
 				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)

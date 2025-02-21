@@ -1,3 +1,4 @@
+using CurrieTechnologies.Razor.SweetAlert2;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
 using MailDLL;
@@ -11,6 +12,7 @@ namespace FaxMailFrontend.Pages
 	public partial class EmailSinglePage
 	{
 		int MaxFileSize = 1;
+		int MaxFilesPerStack = 1;
 		IJSObjectReference? _module;
 		IJSObjectReference? _dropzoneInstance;
 		ElementReference dropZoneElement;
@@ -25,14 +27,15 @@ namespace FaxMailFrontend.Pages
 		private bool absendenVerboten = true;
 		private string FilePath { get; set; } = "";
 		private string usedPathname = "";
-		private string? dokumentenPath;
+		private FileInformation? selectedFile;
 		private string basePath = "";
+		private int uploadcounter = 0;
 
 		protected override async Task OnInitializedAsync()
 		{
 			basePath = env.WebRootPath + "\\Files";
 			MaxFileSize = GetMaxMB() * 1024 * 1024;
-			
+			MaxFilesPerStack = GetMaxFilesPerStack();
 		}
 
 		private void Logout()
@@ -43,6 +46,10 @@ namespace FaxMailFrontend.Pages
 		public int GetMaxMB()
 		{
 			return Configuration.GetValue<int>("FileSettings:MaxMB");
+		}
+		public int GetMaxFilesPerStack()
+		{
+			return Configuration.GetValue<int>("FileSettings:MaxFilesPerStack");
 		}
 		protected override async Task OnAfterRenderAsync(bool firstRender)
 		{
@@ -65,7 +72,8 @@ namespace FaxMailFrontend.Pages
 		{
 			if (usedPathname == "")
 			{
-				usedPathname = Guid.NewGuid().ToString();
+				usedPathname = fileHandler.UUID;
+				
 				basePath = Path.Combine(env.WebRootPath, "Files", usedPathname);
 				try
 				{
@@ -81,15 +89,15 @@ namespace FaxMailFrontend.Pages
 			}
 			try
 			{
-				var files = e.GetMultipleFiles();
+				var files = e.GetMultipleFiles(MaxFilesPerStack);
 				foreach (var file in files)
 				{
 					using var stream = file.OpenReadStream(MaxFileSize);
 					var path = Path.Combine(env.WebRootPath, "Files", usedPathname, file.Name);
 					if (File.Exists(path))
 					{
-						File.Delete(path);
-						messageText += $"Datei {Path.GetFileName(path)} wurde überschrieben";
+						path = Path.Combine(env.WebRootPath, "Files", usedPathname, Path.GetFileNameWithoutExtension(file.Name)+ $"_re{uploadcounter}" + Path.GetExtension(file.Name) );
+						uploadcounter++;
 					}
 					FileStream fileStream = File.Create(path);
 					await stream.CopyToAsync(fileStream);
@@ -99,17 +107,62 @@ namespace FaxMailFrontend.Pages
 					if (Path.GetExtension(file.Name).Equals(".eml", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(file.Name).Equals(".msg", StringComparison.OrdinalIgnoreCase))
 					{
 						await EmailSplitter(file.Name, Path.Combine(env.WebRootPath, "Files", usedPathname));
+						fileHandler.DeleteFile(file.Name);
+					}
+					else
+					{
+						fileHandler.AddFile(Path.GetFileName(path), File.ReadAllBytes(path));
 					}
 				}
-				fileHandler = new FileHandler($"{env.WebRootPath}\\Files\\{usedPathname}\\", usedPathname);
+				//fileHandler = new FileHandler($"{env.WebRootPath}\\Files\\{usedPathname}\\", usedPathname);
+
+				if (fileHandler.Files.Count > MaxFilesPerStack)
+				{
+					foreach (var file in files)
+					{
+						fileHandler.DeleteFile(file.Name);
+					}
+
+					messageText = $"Es dürfen maximal {MaxFilesPerStack} Dateien hochgeladen werden." + Environment.NewLine + "Die zuletzt zugefügten Deteien wurden gelöscht";
+					var result = await Swal.FireAsync(new SweetAlertOptions
+					{
+						Title = "Achtung!",
+						Text = messageText,
+						Icon = SweetAlertIcon.Warning,
+						ConfirmButtonText = "OK"
+					});
+				}
 				await RunChecks();
 				StateHasChanged();
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				if (ex.Message.Contains("The maximum number of files accepted"))
+				{
+					var result = await Swal.FireAsync(new SweetAlertOptions
+					{
+						Title = "Achtung!",
+						Text = $"Die Anzahl der übertragenen Daten ist größer als das Maximum von {MaxFilesPerStack}",
+						Icon = SweetAlertIcon.Warning,
+						ConfirmButtonText = "OK"
+					});
+				}
+				else if (ex.Message.Contains("exceeds the maximum of"))
+				{
+					var result = await Swal.FireAsync(new SweetAlertOptions
+					{
+						Title = "Achtung!",
+						Text = $"Die bertragene Datei ist größer als das Maximum von {MaxFileSize} Bytes",
+						Icon = SweetAlertIcon.Warning,
+						ConfirmButtonText = "OK"
+					});
+				}
+				else
+				{
+					eh.Systemmessage = ex.Message;
+					eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
+					navigationManager.NavigateTo($"/ErrorPage");
+				}
 			}
 		}
 
@@ -119,7 +172,11 @@ namespace FaxMailFrontend.Pages
 			{
 				Mail myMail = new Mail(Path.Combine(path, filename));
 				myMail.CollectAttachments();
-				myMail.WriteAttachments();
+				List<string> filelistFromMail = myMail.WriteAttachments();
+				foreach (var file in filelistFromMail)
+				{
+					fileHandler.AddFile(Path.GetFileName(file), File.ReadAllBytes(file));
+				}
 			}
 			catch (Exception ex)
 			{
@@ -152,8 +209,15 @@ namespace FaxMailFrontend.Pages
 				{
 					foreach (var file in filelistToDelete)
 					{
-						DeleteFile(file.File);
-						await JSRuntime.InvokeVoidAsync("alert", file.Message + Environment.NewLine + "Das File wurde gelöscht.");
+						fileHandler.DeleteFile(file.File);
+						var result = await Swal.FireAsync(new SweetAlertOptions
+						{
+							Title = "Achtung!",
+							Text = file.Message + Environment.NewLine + "Das File wurde gelöscht.",
+							Icon = SweetAlertIcon.Info,
+							ConfirmButtonText = "OK"
+						});
+						//await JSRuntime.InvokeVoidAsync("alert", file.Message + Environment.NewLine + "Das File wurde gelöscht.");
 					}
 				}
 
@@ -171,15 +235,22 @@ namespace FaxMailFrontend.Pages
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
-		private void HandlePathNameChanged(string path)
+		private void HandlePathNameChanged(FileInformation file)
 		{
-			dokumentenPath = $"Files\\{usedPathname}\\" + path;
+			selectedFile = file;
 			StateHasChanged();
 		}
 		protected override void OnInitialized()
 		{
 			base.OnInitialized();
-			fileHandler = new FileHandler("", "");
+			InitializeFileHandler();
+		}
+
+		private void InitializeFileHandler()
+		{
+			fileHandler.UUID = Guid.NewGuid().ToString();
+			fileHandler.ErrorMessage = "";
+			fileHandler.Path = $"{env.WebRootPath}\\Files";
 		}
 
 		private void CheckIfAbsendenErlaubt()
@@ -222,12 +293,21 @@ namespace FaxMailFrontend.Pages
 		}
 
 
-		private void DeleteFile(string filename)
-		{
-			if (fileHandler is not null)
-				fileHandler.DeleteFile(filename);
-			File.Delete($"{env.WebRootPath}\\Files\\{usedPathname}\\{filename}");
-		}
+		//private void DeleteFile(string filename)
+		//{
+		//	try
+		//	{
+		//		if (fileHandler is not null)
+		//			fileHandler.DeleteFile(filename);
+		//		File.Delete($"{env.WebRootPath}\\Files\\{usedPathname}\\{filename}");
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		eh.Systemmessage = ex.Message;
+		//		eh.EC = ErrorCode.KeineDateiGeloescht;
+		//		navigationManager.NavigateTo($"/ErrorPage");
+		//	}
+		//}
 
 		private void Refresh()
 		{
@@ -236,7 +316,7 @@ namespace FaxMailFrontend.Pages
 
 		private void ResetPage()
 		{
-			fileHandler = new FileHandler("", "");
+			
 			_module = null;
 			_dropzoneInstance = null;
 			messageText = "Keine Fehler";

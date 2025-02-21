@@ -8,6 +8,8 @@ namespace FaxMailFrontend.ViewModel
 		string Path { get; set; }
 		string UUID { get; set; }
 
+		static abstract string? CheckFile(string filename);
+		void AddFile(string filename, byte[] filedata);
 		void LoadFiles();
 	}
 }

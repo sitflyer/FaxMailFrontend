@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DataAccess\DataAccessDLL.csproj" />
     <ProjectReference Include="..\MailDLL\MailDLL.csproj" />
+    <ProjectReference Include="..\XMLBox\XMLBox.csproj" />
   </ItemGroup>
 
   <ItemGroup>

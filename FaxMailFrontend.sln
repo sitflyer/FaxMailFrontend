@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailDLL", "MailDLL\MailDLL.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XMLBox", "XMLBox\XMLBox.csproj", "{1E751744-C7DB-4106-A75F-A8154A25D460}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoDLL", "CryptoDLL\CryptoDLL.csproj", "{A168979A-B890-49EA-8C65-0025E0CC6624}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoKonverter", "CryptoTool\CryptoKonverter.csproj", "{40FCBC9C-721C-D6B3-89E3-D5E0092D337F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{1E751744-C7DB-4106-A75F-A8154A25D460}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E751744-C7DB-4106-A75F-A8154A25D460}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E751744-C7DB-4106-A75F-A8154A25D460}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A168979A-B890-49EA-8C65-0025E0CC6624}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A168979A-B890-49EA-8C65-0025E0CC6624}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A168979A-B890-49EA-8C65-0025E0CC6624}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A168979A-B890-49EA-8C65-0025E0CC6624}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40FCBC9C-721C-D6B3-89E3-D5E0092D337F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40FCBC9C-721C-D6B3-89E3-D5E0092D337F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40FCBC9C-721C-D6B3-89E3-D5E0092D337F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40FCBC9C-721C-D6B3-89E3-D5E0092D337F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

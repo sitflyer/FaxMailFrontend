@@ -60,13 +60,16 @@ namespace MailDLL
 			}
 		}
 
-		public void WriteAttachments()
+		public List<string> WriteAttachments()
 		{
+			List<string> filelist = new List<string>();
 			foreach (Attachment att in _attachmentHandler!.Attachments)
 			{
 				try
 				{
 					att.WriteAttachmentToFile(Path.Combine(Path.GetDirectoryName(Filename)!, att.Dateiname));
+					filelist.Add(Path.Combine(Path.GetDirectoryName(Filename)!, att.Dateiname));
+					
 				}
 				catch (Exception ex)
 				{
@@ -77,6 +80,8 @@ namespace MailDLL
 			try
 			{
 				File.WriteAllText(Path.Combine(Path.GetDirectoryName(Filename)!, Path.GetFileNameWithoutExtension(Filename) + "_body.txt"), mailbody);
+				filelist.Add(Path.Combine(Path.GetDirectoryName(Filename)!, Path.GetFileNameWithoutExtension(Filename) + "_body.txt"));
+				return filelist;
 			}
 			catch (Exception ex)
 			{

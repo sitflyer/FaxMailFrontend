@@ -11,6 +11,8 @@
 @inject IConfiguration Configuration
 @inject ILogger<EmailSinglePage> logger
 
+@inject SweetAlertService Swal
+
 @page "/EmailSinglePage"
 @inject NavigationManager navigationManager
 
@@ -57,17 +59,15 @@
                     </div>
                 </div>
             </td>
-            <td><textarea style="width: 300px; height: 120px;" @bind="messageText" readonly></textarea></td>
+            <td><img src="images/freihafen_logo.png" /></td>
         </tr>
         <tr>
             <td><FileHandlerComponent fileHandler="@fileHandler" OnFileHandlerChanged="HandleFileHandlerChanged" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
-            <td>
                 <td style="width: 800px; height: 600px;">
-                    <CentralProcessor></CentralProcessor>
+                    <CentralComponent File="@selectedFile"></CentralComponent>
                 </td>
-            </td>
             <td >
-                <ViewComponent FilePath="@dokumentenPath" BasePath="@basePath"></ViewComponent>
+                <ViewComponent GivenFile="@selectedFile" BasePath="@basePath" UUID="@fileHandler.UUID"></ViewComponent>
             </td>
         </tr>
         <tr>

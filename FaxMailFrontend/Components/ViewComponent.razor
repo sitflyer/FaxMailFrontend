@@ -1,0 +1,109 @@
+﻿@page "/ViewComponent"  
+@using System.IO  
+@using Microsoft.AspNetCore.Components.Forms
+@namespace FaxMailFrontend.Components
+
+<div>
+    @if (filepath != null)
+    {
+        @if (fileType == "image")
+        {
+            @if (File.Exists(@filepath))
+            {
+                <h2>@filepath existiert</h2>
+            }
+            
+            <img src="@filepath" alt="Ausgewähltes Dokument" style="height: 500px; width: 400px;" />
+        }
+        else if (fileType == "pdf")
+        {
+            @if (File.Exists(@filepath))
+            {
+                <h2>@filepath existiert</h2>
+            }
+            <embed src="@filepath" alt="Ausgewähltes Dokument" style="height: 500px; width: 400px;" />
+        }
+        else if (fileType == "txt")
+        {
+            <h2>@filepath</h2>
+            <textarea style="height: 500px; width: 400px;" readonly>@fileContent</textarea>
+        }
+        else
+        {
+            <p>File type not supported</p>
+        }
+    }
+    else
+    {
+        <p>Kein valides File ausgewählt</p>
+    }
+</div>
+
+@code {
+    [Parameter]  
+    public FileInformation? GivenFile { get; set; }
+    [Parameter]
+    public string? BasePath { get; set; }
+    [Parameter]
+    public string? UUID { get; set; }
+    private string? fileType;  
+    private string? fileContent;
+    public List<string> DokumentZeilen = new() { };
+    private string? filepath;
+
+    protected override void OnParametersSet()  
+    {  
+        base.OnParametersSet();  
+        try
+        {
+            UpdateViewer();  
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error while setting parameters: {ex.Message}");
+        }
+    }  
+
+    private void UpdateViewer()  
+    {  
+        try
+        {
+            if (GivenFile != null && UUID != null)
+            {
+                if (!string.IsNullOrEmpty(GivenFile.FileName))
+                {
+                    var extension = Path.GetExtension(GivenFile.FileName).ToLower();
+                    fileType = extension switch
+                    {
+                        ".pdf" => "pdf",
+                        ".jpg" => "image",
+                        ".jpeg" => "image",
+                        ".png" => "image",
+                        ".tiff" => "image",
+                        ".tif" => "image",
+                        ".txt" => "txt",
+                        ".text" => "txt",
+                        _ => "unknown"
+                    };
+
+                    if (fileType == "txt")
+                    {
+                        fileContent = File.ReadAllText(Path.Combine(BasePath!, Path.GetFileName(GivenFile.FileName)));
+                        filepath = Path.Combine(BasePath!, Path.GetFileName(GivenFile!.FileName));
+                    }
+                    else
+                    {
+                        filepath = $"Files\\{UUID}\\" + GivenFile!.FileName;
+                        //filepath = $"Files/{UUID}/" + Path.GetFileName(GivenFile!.FileName);
+                    }
+                    StateHasChanged();
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error while updating viewer: {ex.Message}");
+        }
+   }  
+}

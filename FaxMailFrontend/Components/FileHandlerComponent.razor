@@ -1,5 +1,7 @@
 ﻿@inject NavigationManager navigationManager
 @inject ErrorHandler eh
+@inject SweetAlertService Swal
+
 @using FaxMailFrontend.Data
 @namespace FaxMailFrontend.Components
 
@@ -31,11 +33,11 @@
                         <td>@file.FileName</td>
                         <td>
                             <button @onclick="() => SaveFile(file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                <img src="images/save.svg" alt="Save" style="width: 50px; height: 50px;" />
+                                <img src="@(file.isEdit ? "images/save.svg" : "images/to_be_saved.svg")" alt="Save" style="width: 50px; height: 50px;" />
                             </button>
                         </td>
                         <td>
-                            <button @onclick="() => EditFile(file.FileName)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                            <button @onclick="() => EditFile(file.FileName, file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
                                 <img src="@(file.isSaved ? "images/edit-green.svg" : "images/edit-red.svg")" alt="Edit" style="width: 50px; height: 50px;" />
                             </button>
                         </td>
@@ -49,7 +51,6 @@
             </tbody>
         </table>
     }
-
 }
 
 
@@ -59,15 +60,17 @@
     [Parameter]
     public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
     [Parameter]
-    public EventCallback<string> OnPathChanged { get; set; }
-    
+    public EventCallback<FileInformation> OnPathChanged { get; set; }    
+
     private string? Dateiname { get; set; }
     
-    private async Task EditFile(string filename)
+    private async Task EditFile(string filename, FileInformation file)
     {
         if (fileHandler is not null)
         {
-            await OnPathChanged.InvokeAsync(filename);
+            
+            await OnPathChanged.InvokeAsync(file);
+            file.isEdit = false;
             StateHasChanged();
         }
     }
@@ -77,18 +80,28 @@
         if (fileHandler is not null)
         {
             file.isSaved = true;
+            file.isEdit = true;
             await OnFileHandlerChanged.InvokeAsync(fileHandler);
             StateHasChanged();
         }
     }
 
-    private void DeleteFile(string filename)
+    private async Task DeleteFile(string filename)
     {
         if (fileHandler is not null)
         {
+			var result = await Swal.FireAsync(new SweetAlertOptions
+			{
+				Title = "Achtung!",
+                    Text = $"Das File {filename} wurde gelöscht.",
+				Icon = SweetAlertIcon.Info,
+				ConfirmButtonText = "OK"
+			});
+
             if (fileHandler.DeleteFile(filename))
             {
-                fileHandler.LoadFiles();
+                //fileHandler.LoadFiles();
+                await OnPathChanged.InvokeAsync(null);
                 StateHasChanged();
             }
             else
