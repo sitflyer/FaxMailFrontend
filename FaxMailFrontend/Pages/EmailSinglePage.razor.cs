@@ -220,7 +220,6 @@ namespace FaxMailFrontend.Pages
 						//await JSRuntime.InvokeVoidAsync("alert", file.Message + Environment.NewLine + "Das File wurde gelöscht.");
 					}
 				}
-
 			}
 			catch (Exception ex)
 			{
@@ -232,12 +231,15 @@ namespace FaxMailFrontend.Pages
 		private void HandleFileHandlerChanged(FileHandler updatedFileHandler)
 		{
 			fileHandler = updatedFileHandler;
+			//if (fileHandler.Files.Count == 0)
+			selectedFile = null;
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
 		private void HandlePathNameChanged(FileInformation file)
 		{
 			selectedFile = file;
+
 			StateHasChanged();
 		}
 		protected override void OnInitialized()

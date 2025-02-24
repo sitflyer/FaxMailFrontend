@@ -62,9 +62,9 @@
             <td><img src="images/freihafen_logo.png" /></td>
         </tr>
         <tr>
-            <td><FileHandlerComponent fileHandler="@fileHandler" OnFileHandlerChanged="HandleFileHandlerChanged" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
+            <td><FileHandlerComponent fileHandler="@fileHandler" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
                 <td style="width: 800px; height: 600px;">
-                    <CentralComponent File="@selectedFile"></CentralComponent>
+                <CentralComponent File="@selectedFile"></CentralComponent>
                 </td>
             <td >
                 <ViewComponent GivenFile="@selectedFile" BasePath="@basePath" UUID="@fileHandler.UUID"></ViewComponent>

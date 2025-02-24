@@ -28,6 +28,18 @@ namespace DataAccessDLL.Services
 			}
 		}
 
+		public List<IDokumentenProcessor> GetAllDocumentsSync()
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors.Cast<IDokumentenProcessor>().ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<List<IDokumentenProcessor>> GetAllDocumentsByKategorie(string kategorie)
 		{
 			try
@@ -36,6 +48,21 @@ namespace DataAccessDLL.Services
 					.Where(dp => dp.Kategorie == kategorie)
 					.Cast<IDokumentenProcessor>()
 					.ToListAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
+		public List<IDokumentenProcessor> GetAllDocumentsByKategorieSync(string kategorie)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Kategorie == kategorie)
+					.Cast<IDokumentenProcessor>()
+					.ToList();
 			}
 			catch (Exception ex)
 			{
@@ -58,6 +85,21 @@ namespace DataAccessDLL.Services
 			}
 		}
 
+		public List<IDokumentenProcessor> GettAllDocumentsByUnterkategorieSync(string unterkategorie)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Unterkategorie == unterkategorie)
+					.Cast<IDokumentenProcessor>()
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<List<string>> GettAllKategories()
 		{
 			try
@@ -72,6 +114,22 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
 			}
 		}
+
+		public List<string> GettAllKategoriesSync()
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Select(dp => dp.Kategorie)
+					.Distinct()
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<List<string>> GettAllSubKategoriesByKategory(string kategorie)
 		{
 			try
@@ -87,6 +145,23 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
 			}
 		}
+
+		public List<string> GettAllSubKategoriesByKategorySync(string kategorie)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Kategorie == kategorie)
+					.Select(dp => dp.Unterkategorie)
+					.Distinct()
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<List<string>> GettAllDocumentsBySubkategory(string subkategorie)
 		{
 			try
@@ -102,6 +177,23 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
 			}
 		}
+
+		public List<string> GettAllDocumentsBySubkategorySync(string subkategorie)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Unterkategorie == subkategorie)
+					.Select(dp => dp.Dokumentklasse)
+					.Distinct()
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<IDokumentenProcessor> GettDocuProByName(string dokuklasse)
 		{
 			try
@@ -115,6 +207,21 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
 			}
 		}
+
+		public IDokumentenProcessor GettDocuProByNameSync(string dokuklasse)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Dokumentklasse == dokuklasse)
+					.First();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
 		public async Task<List<string>> GettAllDocumentsBySubkategory(string subkategorie, string category)
 		{
 			try
@@ -124,6 +231,22 @@ namespace DataAccessDLL.Services
 					.Select(dp => dp.Dokumentklasse)
 					.Distinct()
 					.ToListAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+
+		public List<string> GettAllDocumentsBySubkategorySync(string subkategorie, string category)
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors
+					.Where(dp => dp.Unterkategorie == subkategorie && dp.Kategorie == category)
+					.Select(dp => dp.Dokumentklasse)
+					.Distinct()
+					.ToList();
 			}
 			catch (Exception ex)
 			{

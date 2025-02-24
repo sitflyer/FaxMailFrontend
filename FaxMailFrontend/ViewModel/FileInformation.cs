@@ -21,5 +21,6 @@
 		public bool WeitereOB { get; set; } = false;
 		public bool Mailbody { get; set; } = false;
 		public bool AbsendenApproved { get; set; } = false;
+		public bool Autoermittlung { get; set; } = false;
 	}
 }

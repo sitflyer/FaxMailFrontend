@@ -8,24 +8,14 @@
     {
         @if (fileType == "image")
         {
-            @if (File.Exists(@filepath))
-            {
-                <h2>@filepath existiert</h2>
-            }
-            
             <img src="@filepath" alt="Ausgewähltes Dokument" style="height: 500px; width: 400px;" />
         }
         else if (fileType == "pdf")
         {
-            @if (File.Exists(@filepath))
-            {
-                <h2>@filepath existiert</h2>
-            }
             <embed src="@filepath" alt="Ausgewähltes Dokument" style="height: 500px; width: 400px;" />
         }
         else if (fileType == "txt")
         {
-            <h2>@filepath</h2>
             <textarea style="height: 500px; width: 400px;" readonly>@fileContent</textarea>
         }
         else
@@ -98,6 +88,11 @@
                     }
                     StateHasChanged();
                 }
+            }
+            else
+            {
+                fileType = "unknown";
+                StateHasChanged();
             }
 
         }

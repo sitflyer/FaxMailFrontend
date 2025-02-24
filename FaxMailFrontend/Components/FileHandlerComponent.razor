@@ -42,7 +42,7 @@
                             </button>
                         </td>
                         <td>
-                            <button @onclick="() => DeleteFile(file.FileName)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                            <button @onclick="() => DeleteFile(file.FileName,file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
                                 <img src="images/delete.svg" alt="Delete" style="width: 50px; height: 50px;" />
                             </button>
                         </td>
@@ -68,8 +68,8 @@
     {
         if (fileHandler is not null)
         {
-            
             await OnPathChanged.InvokeAsync(file);
+            //await OnFileHandlerChanged.InvokeAsync(fileHandler);
             file.isEdit = false;
             StateHasChanged();
         }
@@ -86,7 +86,7 @@
         }
     }
 
-    private async Task DeleteFile(string filename)
+    private async Task DeleteFile(string filename, FileInformation file)
     {
         if (fileHandler is not null)
         {
