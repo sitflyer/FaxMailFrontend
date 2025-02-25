@@ -1,6 +1,7 @@
 ﻿using iText.Kernel.Pdf;
 using DataAccessDLL.Services;
 using DataAccessDLL.Interfaces;
+using FaxMailFrontend.Data;
 
 namespace FaxMailFrontend.ViewModel
 {
@@ -12,6 +13,9 @@ namespace FaxMailFrontend.ViewModel
 		public string ErrorMessage { get; set; } = string.Empty;
 		private int filecounter = 0;
 		public int selectedFileIndex = -1;
+		public string Targetfolder { get; set; } = string.Empty;
+		public string Protokollfolder { get; set; } = string.Empty;
+
 		public List<IDokumentenProcessor> DokumentenListe { get; set; }
 
 		public FileHandler(IDokuService service)

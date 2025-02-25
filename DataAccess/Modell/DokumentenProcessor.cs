@@ -23,4 +23,6 @@ public partial class DokumentenProcessor : IDokumentenProcessor
 	public byte OtherOb { get; set; }
 
 	public byte Mailbody { get; set; }
+
+	public virtual ICollection<Favoriten> Favoritens { get; set; } = new List<Favoriten>();
 }

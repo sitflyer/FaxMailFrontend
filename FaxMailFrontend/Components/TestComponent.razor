@@ -40,23 +40,112 @@
             @if (FH.Files[FH.selectedFileIndex].KanalartApproved)
             {
                 <p>
-                    Kanalart = @FH.Files[FH.selectedFileIndex].KanalArt
-                    @if (@FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.unbestimmt)
+                    @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)
                     {
-                        <button @onclick="KanalArtWeiter">Setze KanalArt</button>
+                        <div style="display: flex; justify-content: space-between;">
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>
+                            oder
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>
+                        </div>
+                    }
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)
+                    {
+                        <p>
+                            Selektierte Kanalart ist: LateScan
+                        </p>
+                    }
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)
+                    {
+                        <p>
+                            Selektierte Kanalart ist: EPost
+                        </p>
+                    }
+                    else
+                    {
+                        <p>
+                            <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>
+                        </p>
                     }
                 </p>
             }
             @if (FH.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved)
             {
-                <p>
-                    Ordnungsbegriff = @FH.Files[FH.selectedFileIndex].KVNR
-                    @if (@FH.Files[FH.selectedFileIndex].KVNR == "KVNR")
+                @if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.KVNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].KVNR))
                     {
-                        <button @onclick="OBWeiter">Setze Ordnungsbegriff</button>
+                        <label for="kvnrInput">KVNR:</label>
+                        <input id="kvnrInput" @bind="FH.Files[FH.selectedFileIndex].KVNR" @oninput="ValidateKVNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isKVNRValid)">Übernehmen</button>
                     }
-
-                </p>
+                    else
+                    {
+                        <p>
+                            Selektierte KVNR = @FH.Files[FH.selectedFileIndex].KVNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.BTNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].BTNR))
+                    {
+                        <label for="btnrInput">BTNR:</label>
+                        <input id="btnrInput" @bind="FH.Files[FH.selectedFileIndex].BTNR" @oninput="ValidateBTNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isBTNRValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte BTNR = @FH.Files[FH.selectedFileIndex].BTNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.GPNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].GPNR))
+                    {
+                        <label for="gpnrInput">GPNR:</label>
+                        <input id="gpnrInput" @bind="FH.Files[FH.selectedFileIndex].GPNR" @oninput="ValidateGPNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isGPNRValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte GPNR = @FH.Files[FH.selectedFileIndex].GPNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Leik)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].LEIK))
+                    {
+                        <label for="leikInput">LEIK:</label>
+                        <input id="leikInput" @bind="FH.Files[FH.selectedFileIndex].LEIK" @oninput="ValidateLEIK" />
+                        <button @onclick="OBWeiter" disabled="@(!isLEIKValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte LEIK = @FH.Files[FH.selectedFileIndex].LEIK
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Keiner)
+                {
+                    @if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Keiner)
+                    {
+                        <p>
+                            Es wird kein Ordnungsbegriff benötigt
+                        </p>
+                        @OBWeiter()
+                    }
+                }
+                else
+                {
+                    <p>
+                        <strong style="color:red;">Ordnungsbegriffsermittlung ist fehlgeschlagen!</strong>
+                    </p>
+                }
             }
             @if (FH.Files[FH.selectedFileIndex].SuchergebnisAppoved)
             {
@@ -117,12 +206,37 @@
     public FileHandler? FH { get; set; }
     [Parameter]
     public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
-    KanalArt kanalArt = new KanalArt();
 
-
-    private int RandomNumber()
+    private bool isKVNRValid = false;
+    private bool isBTNRValid = false;
+    private bool isGPNRValid = false;
+    private bool isLEIKValid = false;
+    private async Task SetKanalArt(KanalArt kanalArt)
     {
-        return new Random().Next(1, 100);
+        FH!.Files[FH.selectedFileIndex].KanalArt = kanalArt;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        StateHasChanged();
+    }
+    private void ValidateGPNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isGPNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+    }
+    private void ValidateLEIK(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isBTNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+    }
+    private void ValidateBTNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isLEIKValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+    }
+    private void ValidateKVNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isKVNRValid = !string.IsNullOrEmpty(input) && (input.Length == 9 || input.Length == 10);
     }
     private void VorgangReset()
     {
@@ -140,7 +254,28 @@
     }
     private async Task OBWeiter()
     {
-        FH!.Files[FH.selectedFileIndex].KVNR = "A123456789";
+        switch (FH!.Files[FH.selectedFileIndex].Ordnugsbegrff)
+        {
+            case Ordnungsbegriff.KVNR:
+                
+                break;
+            case Ordnungsbegriff.BTNR:
+                
+                break;
+            case Ordnungsbegriff.GPNR:
+                
+                break;
+            case Ordnungsbegriff.Leik:
+                
+                break;
+            case Ordnungsbegriff.Keiner:
+
+                break;
+            default:
+                break;
+
+        }
+
         FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
         FH!.Files[FH.selectedFileIndex].WeitereOB = true;
         await OnFileHandlerChanged.InvokeAsync(FH);
@@ -163,18 +298,33 @@
         await OnFileHandlerChanged.InvokeAsync(FH);
         StateHasChanged();
     }
+
     private async Task SetDokumentenKlasse()
     {
-        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = RandomNumber().ToString();
+        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = "Widerspruch YLAMI41105";
         FH!.Files[FH.selectedFileIndex].KanalartApproved = true;
-        ErmittleKanalArt();
+        FH!.Files[FH.selectedFileIndex].Cascade = GetCascade(FH!.Files[FH.selectedFileIndex].DokumentenKlasse);
+        FH!.Files[FH.selectedFileIndex].KanalArt = FH!.Files[FH.selectedFileIndex].Cascade!.KanalVorgabe;
+        FH!.Files[FH.selectedFileIndex].Ordnugsbegrff = FH!.Files[FH.selectedFileIndex].Cascade!.OBVorgabe;
+        FH!.Files[FH.selectedFileIndex].WOB = FH!.Files[FH.selectedFileIndex].Cascade!.WOBVorgabe;
+        FH!.Files[FH.selectedFileIndex].MailbodyVerakten = FH!.Files[FH.selectedFileIndex].Cascade!.BodyVeraktenVorgabe;
+
         await OnFileHandlerChanged.InvokeAsync(FH);
         StateHasChanged();
     }
-
-    private void ErmittleKanalArt()
+    private Cascade GetCascade(string dokumentenKlasse)
     {
-        kanalArt = KanalArt.unbestimmt;
+        try
+        {
+            IDokumentenProcessor? dp = FH!.DokumentenListe.Find(x => x.Dokumentklasse == dokumentenKlasse);
+            Cascade cascade = new Cascade(dp!.Kanalart, dp.Ob, dp.OtherOb, dp.Mailbody);
+            return cascade;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Dokumentenklasse {dokumentenKlasse} nicht gefunden");
+        }
+        
     }
     protected override void OnParametersSet()
     {

@@ -11,9 +11,12 @@ namespace FaxMailFrontend.ViewModel
 		public bool isEdit { get; set; } = true;
 		public string DokumentenKlasse { get; set; } = string.Empty;
 		public KanalArt KanalArt { get; set; } = KanalArt.unbestimmt;
+		public Ordnungsbegriff Ordnugsbegrff = Ordnungsbegriff.unbestimmt;
+		public WeitereOrdnungsbegriffe WOB { get; set; } = WeitereOrdnungsbegriffe.unbestimmt;
 		public string BTNR { get; set; } = string.Empty;
-		public string KVNR { get; set; } = "KVNR";
+		public string KVNR { get; set; } = string.Empty;
 		public string GPNR { get; set; } = string.Empty;
+		public string LEIK { get; set; } = string.Empty;
 		public string Fallnummer { get; set; } = string.Empty;
 		public string Fallbuendelnummer { get; set; } = string.Empty;
 		public string Produktgruppe { get; set; } = string.Empty;
@@ -26,5 +29,6 @@ namespace FaxMailFrontend.ViewModel
 		public BodyVeraktung MailbodyVerakten { get; set; } = BodyVeraktung.unbestimmt;
 		public bool AbsendenApproved { get; set; } = false;
 		public bool Autoermittlung { get; set; } = false;
+		public Cascade? Cascade { get; set; }
 	}
 }

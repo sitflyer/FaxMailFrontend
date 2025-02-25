@@ -41,8 +41,9 @@ namespace FaxMailFrontend
 			builder.Services.AddScoped<IStammDatenService,StammDatenService>();
 			builder.Services.AddScoped<FileHandler>();
 			builder.Services.AddScoped<ErrorHandler>(provider => new ErrorHandler(ErrorCode.KeinFehler, ""));
-			builder.Services.AddScoped<IWorkingContext>(provider => new WorkingContext("Data Source=localhost;Initial Catalog=Nifi;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"));
-			builder.Services.AddScoped<IStammDatenContext>(provider => new StammDatenContext("Data Source=localhost;Initial Catalog=StammDaten;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")); 
+			builder.Services.AddScoped<IWorkingContext>(provider => new WorkingContext(GetWorkingCntext()));
+			builder.Services.AddScoped<IStammDatenContext>(provider => new StammDatenContext(GetStammDatenContext()));
+			//builder.Services.AddScoped<IReportingContext>(provider => new ReportingContext("Data Source=localhost;Initial Catalog=StammDaten;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"));
 			builder.Configuration
 				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -50,6 +51,15 @@ namespace FaxMailFrontend
 				.AddEnvironmentVariables();
 
 			//builder.Services.AddSweetAlert2();
+		}
+
+		private static string GetWorkingCntext()
+		{
+			return "Data Source=localhost;Initial Catalog=Nifi;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+		}
+		private static string GetStammDatenContext()
+		{
+			return "Data Source=localhost;Initial Catalog=StammDaten;Integrated Security=True;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 		}
 	}
 }

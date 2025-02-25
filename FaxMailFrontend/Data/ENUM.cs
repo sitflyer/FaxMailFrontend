@@ -29,6 +29,22 @@
 		Nein = 2,
 		Fehlerhaft = 3,
 	}
-
+	public enum Ordnungsbegriff : short
+	{
+		unbestimmt = 0,
+		KVNR = 1,
+		BTNR = 2,
+		GPNR = 3,
+		Leik = 4,
+		Keiner = 5
+	}
+	public enum WeitereOrdnungsbegriffe : short
+	{
+		unbestimmt = 0,
+		optFallnrFallbuendellNr = 1,
+		PfichtProduktgruppe = 2,
+		OptProduktgruppe = 3,
+		Keiner = 4
+	}
 
 }
