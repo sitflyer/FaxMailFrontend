@@ -1,15 +1,5 @@
 ﻿namespace FaxMailFrontend.Data
 {
-	public enum Ruechweisungsgrund : short
-	{
-		KeineRueckweisung = 0,
-		DateiZuGroß = 1,
-		DateiNichtErlaubt = 2,
-		PDFMoreThanAllowedPages = 3,
-		FileTypeNotSupported = 4,
-		PDFPasswordProtected = 5,
-		FilenameContainsSpecialCharacters = 6
-	}
 	public enum ErrorCode : short
 	{
 		KeinFehler = 0,
@@ -23,4 +13,22 @@
 		ConfigFehler = 8,
 		VerzeichnisKonnteNichtAngelegtWerden = 9,
 	}
+
+	public enum KanalArt : short
+	{
+		unbestimmt = 0,
+		EPost = 1,
+		lateScan = 2,
+		Beide = 3,
+		Fehlerhaft = 4,
+	}
+	public enum BodyVeraktung : short
+	{
+		unbestimmt = 0,
+		Ja = 1,
+		Nein = 2,
+		Fehlerhaft = 3,
+	}
+
+
 }

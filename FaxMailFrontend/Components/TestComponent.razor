@@ -1,0 +1,213 @@
+﻿@namespace FaxMailFrontend
+@using DataAccessDLL.Services
+@using DataAccessDLL.Interfaces
+@using DataAccessDLL.Modell
+@using FaxMailFrontend.Data
+@using FaxMailFrontend.Components
+@inject NavigationManager navigationManager
+@inject IDokuService docService
+@inject IStammDatenService stammDatenService
+@inject ErrorHandler eh
+
+@if (FH != null)
+{
+    if (FH.Files.Count == 0 || FH.selectedFileIndex == -1)
+    {
+        <p>Keine Datei ausgewählt</p>
+    }
+    else
+    {
+        <h4>Dokumentenklasse für das File @FH.Files[FH.selectedFileIndex].FileName</h4>
+        @if (FH.Files[FH.selectedFileIndex].Autoermittlung)
+        {
+            <h4>Es wurde automtische Ermittlung vorgegeben.</h4>
+            <button @onclick="ManuelleUebernahme">Auf manuell umstellen</button>
+        }
+        else
+        {
+            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].DokumentenKlasse))
+            {
+                <p>Dokuklasse ist null or empty</p>
+                <button @onclick="SetDokumentenKlasse">Setze Dokuklasse</button>
+                <button @onclick="AutomatischeUebernahme">Setze Dokuklasse automatisch</button>
+            }
+            else
+            {
+                <p>
+                    Dokuklasse = @FH.Files[FH.selectedFileIndex].DokumentenKlasse
+                </p>
+            }
+            @if (FH.Files[FH.selectedFileIndex].KanalartApproved)
+            {
+                <p>
+                    Kanalart = @FH.Files[FH.selectedFileIndex].KanalArt
+                    @if (@FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.unbestimmt)
+                    {
+                        <button @onclick="KanalArtWeiter">Setze KanalArt</button>
+                    }
+                </p>
+            }
+            @if (FH.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved)
+            {
+                <p>
+                    Ordnungsbegriff = @FH.Files[FH.selectedFileIndex].KVNR
+                    @if (@FH.Files[FH.selectedFileIndex].KVNR == "KVNR")
+                    {
+                        <button @onclick="OBWeiter">Setze Ordnungsbegriff</button>
+                    }
+
+                </p>
+            }
+            @if (FH.Files[FH.selectedFileIndex].SuchergebnisAppoved)
+            {
+                <p>
+                    Das Suchergebnis lautet: <span style="color:red;">XXX YYYY ZZZZZ</span>
+                </p>
+            }
+            @if (FH.Files[FH.selectedFileIndex].WeitereOB)
+            {
+                @if (!FH.Files[FH.selectedFileIndex].MailBodyApproved)
+                {
+                    <p>
+                        Weitere OB sind optional: Fallnummer / Fallbündelnr./ optional Produktgruppe
+                        <button @onclick="WeitereOBWeiter">Setze weitere Werte</button>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        Weitere OBs:
+                        Fallbündelnummer = @FH!.Files[FH.selectedFileIndex].Fallbuendelnummer
+                        Fallnummer = @FH!.Files[FH.selectedFileIndex].Fallnummer
+                        Produktgrupper = @FH!.Files[FH.selectedFileIndex].Produktgruppe = "PG123"
+                    </p>
+                }
+            }
+            @if (FH.Files[FH.selectedFileIndex].MailBodyApproved)
+            {
+                @if (FH.Files[FH.selectedFileIndex].MailbodyVerakten == BodyVeraktung.unbestimmt)
+                {
+                    <p>
+                        Mailbody verakten ja/nein
+                        <button @onclick="FinalWeiter">Setze Bodyveraktung</button>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        MailbodyVeraktung = @FH.Files[FH.selectedFileIndex].MailbodyVerakten
+                    </p>
+                }
+
+            }
+        }
+    }
+    if (FH.Files.Count != 0 && FH.selectedFileIndex != -1)    
+    {
+        <p>
+            <br />
+            <button @onclick="VorgangReset">Diesen Vorgang resetten</button>
+        </p>
+    }
+
+}
+
+@code {
+    [Parameter]
+    public FileHandler? FH { get; set; }
+    [Parameter]
+    public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
+    KanalArt kanalArt = new KanalArt();
+
+
+    private int RandomNumber()
+    {
+        return new Random().Next(1, 100);
+    }
+    private void VorgangReset()
+    {
+        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = string.Empty;
+        FH!.Files[FH.selectedFileIndex].Autoermittlung = false;
+        FH!.Files[FH.selectedFileIndex].isSaved = false;
+        StateHasChanged();
+    }
+    private async Task KanalArtWeiter()
+    {
+        FH!.Files[FH.selectedFileIndex].KanalArt = KanalArt.Beide;
+        FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task OBWeiter()
+    {
+        FH!.Files[FH.selectedFileIndex].KVNR = "A123456789";
+        FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+        FH!.Files[FH.selectedFileIndex].WeitereOB = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task WeitereOBWeiter()
+    {
+        FH!.Files[FH.selectedFileIndex].Fallbuendelnummer = "FB123454";
+        FH!.Files[FH.selectedFileIndex].Fallnummer = "FN87654321";
+        FH!.Files[FH.selectedFileIndex].Produktgruppe = "PG123";
+        FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task FinalWeiter()
+    {
+        FH!.Files[FH.selectedFileIndex].MailbodyVerakten = BodyVeraktung.Ja;
+        FH!.Files[FH.selectedFileIndex].isSaved = true;
+
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task SetDokumentenKlasse()
+    {
+        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = RandomNumber().ToString();
+        FH!.Files[FH.selectedFileIndex].KanalartApproved = true;
+        ErmittleKanalArt();
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+
+    private void ErmittleKanalArt()
+    {
+        kanalArt = KanalArt.unbestimmt;
+    }
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        try
+        {
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error while setting parameters: {ex.Message}");
+        }
+    }
+    private async Task ManuelleUebernahme()
+    {
+        if (FH!.Files[FH.selectedFileIndex].Autoermittlung)
+        {
+            FH!.Files[FH.selectedFileIndex].isSaved = false;
+            FH!.Files[FH.selectedFileIndex].Autoermittlung = false;
+        }
+        else
+        {
+            FH!.Files[FH.selectedFileIndex].isSaved = true;
+            FH!.Files[FH.selectedFileIndex].Autoermittlung = true;
+        }
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task AutomatischeUebernahme()
+    {
+        FH!.Files[FH.selectedFileIndex].Autoermittlung = true;
+        FH!.Files[FH.selectedFileIndex].isSaved = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+}

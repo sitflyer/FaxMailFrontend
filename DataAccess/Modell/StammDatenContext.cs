@@ -18,6 +18,10 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 	{
 	}
 
+	public virtual DbSet<LeistungserbringerIk> LeistungserbringerIks { get; set; }
+
+	public virtual DbSet<StammdatenFirmenkunde> StammdatenFirmenkundes { get; set; }
+
 	public virtual DbSet<StammdatenVersicherte> StammdatenVersichertes { get; set; }
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -25,6 +29,91 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
+		modelBuilder.Entity<LeistungserbringerIk>(entity =>
+		{
+			entity
+				.HasNoKey()
+				.ToTable("LEISTUNGSERBRINGER_IK");
+
+			entity.Property(e => e.Betriebsstaette)
+				.HasMaxLength(12)
+				.HasColumnName("BETRIEBSSTAETTE");
+			entity.Property(e => e.Bezeichnung)
+				.HasMaxLength(40)
+				.HasColumnName("BEZEICHNUNG");
+			entity.Property(e => e.Bpnr)
+				.HasMaxLength(10)
+				.HasColumnName("BPNR");
+			entity.Property(e => e.Hausnummer)
+				.HasMaxLength(10)
+				.HasColumnName("HAUSNUMMER");
+			entity.Property(e => e.Name1)
+				.HasMaxLength(60)
+				.HasColumnName("NAME1");
+			entity.Property(e => e.Name2)
+				.HasMaxLength(60)
+				.HasColumnName("NAME2");
+			entity.Property(e => e.Name3)
+				.HasMaxLength(60)
+				.HasColumnName("NAME3");
+			entity.Property(e => e.Name4)
+				.HasMaxLength(60)
+				.HasColumnName("NAME4");
+			entity.Property(e => e.Ort)
+				.HasMaxLength(60)
+				.HasColumnName("ORT");
+			entity.Property(e => e.Plz)
+				.HasMaxLength(10)
+				.HasColumnName("PLZ");
+			entity.Property(e => e.Rolle)
+				.HasMaxLength(6)
+				.HasColumnName("ROLLE");
+			entity.Property(e => e.Strasse)
+				.HasMaxLength(60)
+				.HasColumnName("STRASSE");
+			entity.Property(e => e.Type)
+				.HasMaxLength(6)
+				.HasColumnName("TYPE");
+			entity.Property(e => e.Verarbdatum)
+				.HasMaxLength(20)
+				.HasColumnName("VERARBDATUM");
+		});
+
+		modelBuilder.Entity<StammdatenFirmenkunde>(entity =>
+		{
+			entity
+				.HasNoKey()
+				.ToTable("STAMMDATEN_FIRMENKUNDE");
+
+			entity.Property(e => e.Btnr)
+				.HasMaxLength(20)
+				.HasColumnName("BTNR");
+			entity.Property(e => e.Firmenname)
+				.HasMaxLength(180)
+				.HasColumnName("FIRMENNAME");
+			entity.Property(e => e.Hausnummer)
+				.HasMaxLength(10)
+				.HasColumnName("HAUSNUMMER");
+			entity.Property(e => e.Identart)
+				.HasMaxLength(4)
+				.HasColumnName("IDENTART");
+			entity.Property(e => e.Ort)
+				.HasMaxLength(60)
+				.HasColumnName("ORT");
+			entity.Property(e => e.Plz)
+				.HasMaxLength(10)
+				.HasColumnName("PLZ");
+			entity.Property(e => e.Strasse)
+				.HasMaxLength(60)
+				.HasColumnName("STRASSE");
+			entity.Property(e => e.UniqueId)
+				.ValueGeneratedOnAdd()
+				.HasColumnName("UNIQUE_ID");
+			entity.Property(e => e.Verarbdatum)
+				.HasMaxLength(20)
+				.HasColumnName("VERARBDATUM");
+		});
+
 		modelBuilder.Entity<StammdatenVersicherte>(entity =>
 		{
 			entity

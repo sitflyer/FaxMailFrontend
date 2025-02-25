@@ -19,9 +19,98 @@
     }
     else
     {
-        <div>
+        if (!string.IsNullOrEmpty(File.DokumentenKlasse))
+        {
             <p>
                 <h4>Dokumentenklasse für das File @File.FileName</h4>
+                <input type="text" readonly @bind=@dokumentenKlasse placeholder="keine Dokumentenklasse ausgewählt" style="flex: 1; margin: 0 10px;" />
+            </p>
+        }
+        else
+        {
+            <p>
+                <h4>Dokumentenklasse für das File @File.FileName</h4>
+                <p>
+                <p style="display: flex; justify-content: space-between;">
+                    <span>
+                        <div class="dropdown" style="flex: 1;">
+                            <label for="dokuKlasse">Dokumentenklasse aus Favoriten:</label>
+                            <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%;">
+                                        @foreach (var document in dokumente)
+                                        {
+                                    <option value="@document">@document</option>
+                                        }
+                            </select>
+                        </div>
+                    </span>
+                    <input type="text" readonly @bind=@dokumentenKlasse placeholder="keine Dokumentenklasse ausgewählt" style="flex: 1; margin: 0 10px;" />
+                    <span></span>
+                </p>
+                                </p>
+                <div class="dropdown-menus" style="display: flex; justify-content: space-between;">
+                    <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                        <label for="category">Kategorie:</label>
+                        <select name="" id="category" @onchange="OnCategoryChange" style="width: 100%;">
+                                @foreach (var category in Categories)
+                                {
+                                <option value="@category">@category</option>
+                                }
+                        </select>
+                        <button class="btn-primary" @onclick="AutomatischeUebernahme" style="display: block; margin: 10px auto;">Automatische Übernahme der Dokumentenklasse</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(selectedCategory))
+                    {
+                    <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                        <label for="unterkategorie">Unterkategorie:</label>
+                        <select id="unterkategorie" @onchange="OnSubCategoryChange" style="width: 100%;">
+                                @foreach (var unterkategorie in Unterkategorien)
+                                {
+                                <option value="@unterkategorie">@unterkategorie</option>
+                                }
+                        </select>
+                        <button class="btn-primary" @onclick="FavoritenHinzufuegen" style="display: block; margin: 10px auto;">
+                            <img src="@GetFavoritIcon()" alt="Favoriten" style="vertical-align: middle; margin-right: 5px; width: 30px; height: 30px;" />Favoriten hinzufügen/abwählen
+                        </button>
+                    </div>
+                    }
+                    @if (!string.IsNullOrEmpty(selectedunterkategory) || !dokumentenKlasseDekativiert)
+                    {
+                    <div class="dropdown" style="flex: 1;">
+                        <label for="dokuKlasse">Dokumentenklasse:</label>
+                        <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%;">
+                                @foreach (var document in dokumente)
+                                {
+                                <option value="@document">@document</option>
+                                }
+                        </select>
+                        <div style="display: flex; justify-content: center; margin-top: 10px;">
+                            <button class="btn-outline-primary" @onclick="Weiter" style="width: 100%;" disabled="@(string.IsNullOrEmpty(dokumentenKlasse))">Weiter</button>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </p>
+        }
+  @*       <div>
+            <p>
+                <h4>Dokumentenklasse für das File @File.FileName</h4>
+                <p>
+                    <p style="display: flex; justify-content: space-between;">
+                        <span>
+                            <div class="dropdown" style="flex: 1;">
+                                <label for="dokuKlasse">Dokumentenklasse aus Favoriten:</label>
+                                <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%;">
+                                    @foreach (var document in dokumente)
+                                    {
+                                        <option value="@document">@document</option>
+                                    }
+                                </select>
+                            </div>
+                        </span>
+                        <input type="text" readonly @bind=@dokumentenKlasse placeholder="keine Dokumentenklasse ausgewählt" style="flex: 1; margin: 0 10px;" />
+                        <span></span>
+                    </p>
+                </p>
                 <div class="dropdown-menus" style="display: flex; justify-content: space-between;">
                     <div class="dropdown" style="flex: 1; margin-right: 10px;">
                         <label for="category">Kategorie:</label>
@@ -58,8 +147,8 @@
                                     <option value="@document">@document</option>
                                 }
                             </select>
-                            <div style="display: flex; justify-content: center; margin-top: 10px;">
-                                <button class="btn-outline-primary" @onclick="Weiter" style="width: 100%;">Weiter</button>
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">  
+                                <button class="btn-outline-primary" @onclick="Weiter" style="width: 100%;" disabled="@(string.IsNullOrEmpty(dokumentenKlasse))">Weiter</button>  
                             </div>
                         </div>
                     }
@@ -101,13 +190,34 @@
                     </p>
                 }
             }
-        </div>
+        </div> *@
+        <p>
+
+                <p>  
+                   <button @onclick="ResetComponent">Reset Vorgang</button>  
+                </p>  
+
+                @code {  
+                   private void ResetComponent()  
+                   {  
+                       selectedCategory = null;  
+                       selectedunterkategory = null;  
+                       dokumentenKlasse = null;  
+                       Unterkategorien.Clear();  
+                       dokumente.Clear();  
+                       File = null;  
+                       StateHasChanged();  
+                   }  
+                }
+        </p>
     }
 }
 
 @code {
     [Parameter]
     public FileInformation? File { get; set; }
+    [Parameter]
+    public EventCallback<FileInformation> OnFileUpdated { get; set; }
     private List<string> Categories = new();
     private List<string> Unterkategorien = new();
     private List<string> dokumente = new();
@@ -140,8 +250,13 @@
         StateHasChanged();
     }
 
-    private void Weiter()
+    private async Task Weiter()
     {
+        File!.DokumentenKlasse = dokumentenKlasse!;
+        await OnFileUpdated.InvokeAsync (File);
+        //File.KanalartApproved = true;
+        StateHasChanged();
+
         // Implement logic for proceeding to the next step
     }
     protected override async Task OnInitializedAsync()
@@ -152,7 +267,7 @@
             {
                 Categories = await docService.GettAllKategories();
                 selectedCategory = Categories.First();
-                await OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });
+                OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });
             }
             catch (Exception ex)
             {
@@ -161,10 +276,10 @@
                 navigationManager.NavigateTo($"/ErrorPage");
             }
         }
-        
+
     }
 
-    private async Task OnCategoryChange(ChangeEventArgs e)
+    private void OnCategoryChange(ChangeEventArgs e)
     {
         if (File != null)
         {
@@ -173,8 +288,8 @@
             {
                 try
                 {
-                    Unterkategorien = await docService.GettAllSubKategoriesByKategory(selectedCategory);
-                    await OnSubCategoryChange(new ChangeEventArgs { Value = Unterkategorien[0] });
+                    Unterkategorien = docService.GettAllSubKategoriesByKategorySync(selectedCategory);
+                    OnSubCategoryChange(new ChangeEventArgs { Value = Unterkategorien[0] });
                     StateHasChanged();
                 }
                 catch (Exception ex)
@@ -186,7 +301,7 @@
             }
         }
     }
-    private async Task OnSubCategoryChange(ChangeEventArgs e)
+    private void OnSubCategoryChange(ChangeEventArgs e)
     {
         if (File != null)
         {
@@ -195,7 +310,7 @@
             {
                 try
                 {
-                    dokumente = await docService.GettAllDocumentsBySubkategory(selectedunterkategory!, selectedCategory!);
+                    dokumente = docService.GettAllDocumentsBySubkategorySync(selectedunterkategory!, selectedCategory!);
                     File!.DokumentenKlasse = dokumentenKlasse!;
                     StateHasChanged();
                 }
@@ -207,7 +322,7 @@
                 }
             }
         }
-        
+
     }
     protected async override Task OnParametersSetAsync()
     {
@@ -218,17 +333,22 @@
         dokumentenKlasse = null;
         Unterkategorien.Clear();
         dokumente.Clear();
-        try
+        if (File != null)
         {
-            Categories = await docService.GettAllKategories();
-            selectedCategory = Categories.First();
-            await OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });
+            try
+            {
+                // Categories = await docService.GettAllKategories();
+                Categories = docService.GettAllKategoriesSync();
+                // selectedCategory = Categories.First();
+                OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });
+            }
+            catch (Exception ex)
+            {
+                eh.Systemmessage = ex.Message;
+                eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                navigationManager.NavigateTo($"/ErrorPage");
+            }
         }
-        catch (Exception ex)
-        {
-            eh.Systemmessage = ex.Message;
-            eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-            navigationManager.NavigateTo($"/ErrorPage");
-        }
+        
     }
 }

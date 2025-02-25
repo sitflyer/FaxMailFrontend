@@ -21,7 +21,7 @@
             <thead>
                 <tr style="border: 2px solid black;">
                     <th>Filename</th>
-                    <th>Save</th>
+                    @* <th>Save</th> *@
                     <th>Edit</th>
                     <th>Delete</th>
                 </tr>
@@ -30,20 +30,15 @@
                 @foreach (var file in fileHandler.Files)
                 {
                     <tr style="border: 2px solid black;">
-                        <td>@file.FileName</td>
+                        <td @onclick="() => EditFile(file.FileName, file)" style="cursor: pointer;">@file.FileName</td>
                         <td>
-                            <button @onclick="() => SaveFile(file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                <img src="@(file.isEdit ? "images/save.svg" : "images/to_be_saved.svg")" alt="Save" style="width: 50px; height: 50px;" />
+                            <button @onclick="() => EditFile(file.FileName, file)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                <img src="@(file.isSaved ? "images/saved.png" : "images/datei.png")" alt="Edit" style="width: 30px; height: 30px;" />
                             </button>
                         </td>
                         <td>
-                            <button @onclick="() => EditFile(file.FileName, file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                <img src="@(file.isSaved ? "images/edit-green.svg" : "images/edit-red.svg")" alt="Edit" style="width: 50px; height: 50px;" />
-                            </button>
-                        </td>
-                        <td>
-                            <button @onclick="() => DeleteFile(file.FileName,file)" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                <img src="images/delete.svg" alt="Delete" style="width: 50px; height: 50px;" />
+                            <button @onclick="() => DeleteFile(file.FileName,file)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                <img src="images/delete.svg" alt="Delete" style="width: 30px; height: 30px;" />
                             </button>
                         </td>
                     </tr>
@@ -52,7 +47,6 @@
         </table>
     }
 }
-
 
 @code {
     [Parameter]
@@ -63,52 +57,58 @@
     public EventCallback<FileInformation> OnPathChanged { get; set; }    
 
     private string? Dateiname { get; set; }
-    
+
     private async Task EditFile(string filename, FileInformation file)
     {
         if (fileHandler is not null)
         {
             await OnPathChanged.InvokeAsync(file);
-            //await OnFileHandlerChanged.InvokeAsync(fileHandler);
+            fileHandler.selectedFileIndex = file.ID;
+            await OnFileHandlerChanged.InvokeAsync(fileHandler);
             file.isEdit = false;
             StateHasChanged();
         }
     }
     
-    private async Task SaveFile(FileInformation file)
-    {
-        if (fileHandler is not null)
-        {
-            file.isSaved = true;
-            file.isEdit = true;
-            await OnFileHandlerChanged.InvokeAsync(fileHandler);
-            StateHasChanged();
-        }
-    }
+    // private async Task SaveFile(FileInformation file)
+    // {
+    //     // if (fileHandler is not null)
+    //     // {
+    //     //     file.isSaved = true;
+    //     //     file.isEdit = true;
+    //     //     await OnFileHandlerChanged.InvokeAsync(fileHandler);
+    //     //     StateHasChanged();
+    //     // }
+    // }
 
     private async Task DeleteFile(string filename, FileInformation file)
     {
         if (fileHandler is not null)
         {
-			var result = await Swal.FireAsync(new SweetAlertOptions
-			{
-				Title = "Achtung!",
-                    Text = $"Das File {filename} wurde gelöscht.",
-				Icon = SweetAlertIcon.Info,
-				ConfirmButtonText = "OK"
-			});
+            var result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bist du sicher?",
+                    Text = $"Möchtest du die Datei {filename} wirklich löschen?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Ja, löschen",
+                    CancelButtonText = "Abbrechen"
+                });
 
-            if (fileHandler.DeleteFile(filename))
+            if (result.IsConfirmed)
             {
-                //fileHandler.LoadFiles();
-                await OnPathChanged.InvokeAsync(null);
-                StateHasChanged();
-            }
-            else
-            {
-                eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
-                eh.EC = ErrorCode.KeineDateiGeloescht;
-                navigationManager.NavigateTo($"/ErrorPage");
+                if (fileHandler.DeleteFile(filename))
+                {
+                    //fileHandler.LoadFiles();
+                    await OnPathChanged.InvokeAsync(null);
+                    StateHasChanged();
+                }
+                else
+                {
+                    eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                    eh.EC = ErrorCode.KeineDateiGeloescht;
+                    navigationManager.NavigateTo($"/ErrorPage");
+                }
             }
         }
     }

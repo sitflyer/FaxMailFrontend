@@ -1,4 +1,6 @@
 ﻿using iText.Kernel.Pdf;
+using DataAccessDLL.Services;
+using DataAccessDLL.Interfaces;
 
 namespace FaxMailFrontend.ViewModel
 {
@@ -9,55 +11,65 @@ namespace FaxMailFrontend.ViewModel
 		public string Path { get; set; } = string.Empty;
 		public string ErrorMessage { get; set; } = string.Empty;
 		private int filecounter = 0;
+		public int selectedFileIndex = -1;
+		public List<IDokumentenProcessor> DokumentenListe { get; set; }
 
-		public FileHandler()
+		public FileHandler(IDokuService service)
 		{
-
+			try
+			{
+				DokumentenListe = service.GetAllDocumentsSync();
+			}
+			catch (Exception ex)
+			{
+				DokumentenListe = new List<IDokumentenProcessor>();
+				ErrorMessage = ex.Message;
+			}
 		}
 
-		public FileHandler(string basepath, string UUID)
-		{
-			Path = basepath;
-			this.UUID = UUID;
-			LoadFiles();
-		}
+		//public FileHandler(string basepath, string UUID)
+		//{
+		//	Path = basepath;
+		//	this.UUID = UUID;
+		//	LoadFiles();
+		//}
 
-		public void AddFile(string filename, byte[] filedata)
+		public void AddFile(string filename, byte[] filedata, int index)
 		{
 			Files.Add(new FileInformation
 			{
-				ID = filecounter + 1,
+				ID = index,
 				FileName = filename,
 				FileData = filedata
 			});
 		}
 
-		public void LoadFiles()
-		{
-			try
-			{
-				Files.Clear();
-				if (Directory.Exists(Path))
-				{
-					var files = Directory.GetFiles(Path);
-					int id = 1;
-					foreach (var file in files)
-					{
-						Files.Add(new FileInformation
-						{
-							ID = id,
-							FileName = System.IO.Path.GetFileName(file),
-							FileData = File.ReadAllBytes(file)
-						});
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				ErrorMessage = ex.Message;
-				throw;
-			}
-		}
+		//public void LoadFiles()
+		//{
+		//	try
+		//	{
+		//		Files.Clear();
+		//		if (Directory.Exists(Path))
+		//		{
+		//			var files = Directory.GetFiles(Path);
+		//			int id = 1;
+		//			foreach (var file in files)
+		//			{
+		//				Files.Add(new FileInformation
+		//				{
+		//					ID = id,
+		//					FileName = System.IO.Path.GetFileName(file),
+		//					FileData = File.ReadAllBytes(file)
+		//				});
+		//			}
+		//		}
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		ErrorMessage = ex.Message;
+		//		throw;
+		//	}
+		//}
 
 		internal bool DeleteFile(string filename)
 		{
@@ -68,6 +80,11 @@ namespace FaxMailFrontend.ViewModel
 					if (File.Exists(Path + F.FileName))
 						File.Delete(Path + F.FileName);
 				Files.RemoveAll(f => f.FileName == filename);
+				foreach (var file in Files)
+				{
+					file.ID = Files.IndexOf(file);
+					selectedFileIndex = -1;
+	}
 				return true;
 			}
 			catch
@@ -79,9 +96,9 @@ namespace FaxMailFrontend.ViewModel
 		public static string? CheckFile(string filename)
 		{
 			if (!CheckFileSize(filename))
-				return $"Die Dateigröße des von Ihnen hochgeladenen Dokuments ist nicht zulässig. Das Dokument kann nicht verarbeitet werden.";
+				return $"Die Dateigröße des von Ihnen hochgeladenen Dokuments \"{System.IO.Path.GetFileName(filename)}\" ist nicht zulässig. Das Dokument kann nicht verarbeitet werden.";
 			if (!CheckType(filename))
-				return $"Das von Ihnen hochgeladene Dokument stellt kein zulässiges Format dar. Das Dokument kann nicht verarbeitet werden.";
+				return $"Das von Ihnen hochgeladene Dokument \"{System.IO.Path.GetFileName(filename)}\" stellt kein zulässiges Format dar. Das Dokument kann nicht verarbeitet werden.";
 			if (!CheckSpecialChar(filename))
 				return $"Die Datei {filename} enthält Sonderzeichen";
 			if (System.IO.Path.GetExtension(filename).ToLower() == ".pdf")

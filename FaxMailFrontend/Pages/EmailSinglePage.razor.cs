@@ -1,9 +1,11 @@
 using CurrieTechnologies.Razor.SweetAlert2;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
+using iText.Layout.Element;
 using MailDLL;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.JSInterop;
 
@@ -30,6 +32,7 @@ namespace FaxMailFrontend.Pages
 		private FileInformation? selectedFile;
 		private string basePath = "";
 		private int uploadcounter = 0;
+		private IBrowserFile filemerker;
 
 		protected override async Task OnInitializedAsync()
 		{
@@ -67,7 +70,7 @@ namespace FaxMailFrontend.Pages
 				}
 			}
 		}
-
+		
 		async Task OnChange(InputFileChangeEventArgs e)
 		{
 			if (usedPathname == "")
@@ -92,6 +95,7 @@ namespace FaxMailFrontend.Pages
 				var files = e.GetMultipleFiles(MaxFilesPerStack);
 				foreach (var file in files)
 				{
+					filemerker = file;
 					using var stream = file.OpenReadStream(MaxFileSize);
 					var path = Path.Combine(env.WebRootPath, "Files", usedPathname, file.Name);
 					if (File.Exists(path))
@@ -111,7 +115,8 @@ namespace FaxMailFrontend.Pages
 					}
 					else
 					{
-						fileHandler.AddFile(Path.GetFileName(path), File.ReadAllBytes(path));
+						fileHandler.AddFile(Path.GetFileName(path), File.ReadAllBytes(path),fileHandler.Files.Count);
+						CheckIfAbsendenErlaubt();
 					}
 				}
 				//fileHandler = new FileHandler($"{env.WebRootPath}\\Files\\{usedPathname}\\", usedPathname);
@@ -152,7 +157,7 @@ namespace FaxMailFrontend.Pages
 					var result = await Swal.FireAsync(new SweetAlertOptions
 					{
 						Title = "Achtung!",
-						Text = $"Die bertragene Datei ist größer als das Maximum von {MaxFileSize} Bytes",
+						Text = $"Die übertragene Datei \"{Path.GetFileName(filemerker.Name)}\" ist größer als das Maximum von {MaxFileSize} Bytes",
 						Icon = SweetAlertIcon.Warning,
 						ConfirmButtonText = "OK"
 					});
@@ -166,6 +171,20 @@ namespace FaxMailFrontend.Pages
 			}
 		}
 
+		private async Task OnBeforeNavigation(LocationChangingContext context)
+		{
+			if (fileHandler.Files.Count > 0)
+			{
+				var result = Swal.FireAsync(new SweetAlertOptions
+				{
+					Title = "Achtung!",
+					Text = "Interne Navigation ist nicht erlaubt un in dieser Applikation nicht sinnvoll.",
+					Icon = SweetAlertIcon.Info,
+					ConfirmButtonText = "OK"
+				});
+				context.PreventNavigation();
+			}
+		}
 		private async Task EmailSplitter(string filename, string path)
 		{
 			try
@@ -173,16 +192,25 @@ namespace FaxMailFrontend.Pages
 				Mail myMail = new Mail(Path.Combine(path, filename));
 				myMail.CollectAttachments();
 				List<string> filelistFromMail = myMail.WriteAttachments();
+				int count = 0;
 				foreach (var file in filelistFromMail)
 				{
-					fileHandler.AddFile(Path.GetFileName(file), File.ReadAllBytes(file));
+					fileHandler.AddFile(Path.GetFileName(file), File.ReadAllBytes(file), count);
+					count++;
 				}
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				var result = Swal.FireAsync(new SweetAlertOptions
+				{
+					Title = "Achtung!",
+					Text = "Die eingereichte E-Mail enthält nicht auslesbaren Inhalt.Bitte die Dokumente einzeln einreichen.",
+					Icon = SweetAlertIcon.Info,
+					ConfirmButtonText = "OK"
+				});
+				//eh.Systemmessage = ex.Message;
+				//eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
+				//navigationManager.NavigateTo($"/ErrorPage");
 			}
 		}
 		private struct FileCheckResult
@@ -236,6 +264,18 @@ namespace FaxMailFrontend.Pages
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
+		private void HandleTestFilehandler(FileHandler updatedFileHandler)
+		{
+			fileHandler = updatedFileHandler;
+			CheckIfAbsendenErlaubt();
+			StateHasChanged();
+		}
+		private void HandleFileUpdate(FileInformation file)
+		{
+			selectedFile = file;
+			StateHasChanged();
+		}
+
 		private void HandlePathNameChanged(FileInformation file)
 		{
 			selectedFile = file;

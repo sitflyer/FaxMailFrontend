@@ -26,14 +26,17 @@ namespace MailDLL
 				{
 					if (attachment is Storage.Attachment storageAttachment)
 					{
-						var mimePart = new MimePart(storageAttachment.MimeType)
-						{
-							Content = new MimeContent(new MemoryStream(storageAttachment.Data)),
-							ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-							ContentTransferEncoding = ContentEncoding.Base64,
-							FileName = storageAttachment.FileName
-						};
-						multipart.Add(mimePart);
+						//if (storageAttachment.MimeType is not null)
+						//{
+							var mimePart = new MimePart(storageAttachment.MimeType)
+							{
+								Content = new MimeContent(new MemoryStream(storageAttachment.Data)),
+								ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+								ContentTransferEncoding = ContentEncoding.Base64,
+								FileName = storageAttachment.FileName
+							};
+							multipart.Add(mimePart);
+						//}
 					}
 				}
 
@@ -43,7 +46,7 @@ namespace MailDLL
 			}
 			catch (Exception ex)
 			{
-				throw new Exception($"Fehler beim Konvertieren der Nachricht. {ex.Message}");
+				throw new Exception($"Die eingereichte E-Mail enthält nicht auslesbaren Inhalt. Bitte die Dokumente einzeln einreichen");
 			}
 		}
 	}

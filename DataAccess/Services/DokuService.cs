@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DataAccessDLL.Modell;
 using DataAccessDLL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +27,17 @@ namespace DataAccessDLL.Services
 			}
 		}
 
+		public List<IDokumentenProcessor> GetAllDocumentsFromFavoritenSync()
+		{
+			try
+			{
+				return WorkingContext.DokumentenProcessors.Cast<IDokumentenProcessor>().ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
 		public List<IDokumentenProcessor> GetAllDocumentsSync()
 		{
 			try
