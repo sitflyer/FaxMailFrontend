@@ -1,4 +1,7 @@
 ﻿using DataAccessDLL.Interfaces;
+using System;
+using System.Collections.Generic;
+
 namespace DataAccessDLL.Modell;
 
 public partial class StammdatenFirmenkunde : IStammdatenFirmenkunde

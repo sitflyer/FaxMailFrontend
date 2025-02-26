@@ -1,6 +1,7 @@
 using CurrieTechnologies.Razor.SweetAlert2;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
+using iText.Kernel.Mac;
 using iText.Layout.Element;
 using MailDLL;
 using Microsoft.AspNetCore.Components;
@@ -33,7 +34,7 @@ namespace FaxMailFrontend.Pages
 		private string basePath = "";
 		private int uploadcounter = 0;
 		private IBrowserFile filemerker;
-
+		private bool protector = false;
 		protected override async Task OnInitializedAsync()
 		{
 			basePath = env.WebRootPath + "\\Files";
@@ -119,7 +120,6 @@ namespace FaxMailFrontend.Pages
 						CheckIfAbsendenErlaubt();
 					}
 				}
-				//fileHandler = new FileHandler($"{env.WebRootPath}\\Files\\{usedPathname}\\", usedPathname);
 
 				if (fileHandler.Files.Count > MaxFilesPerStack)
 				{
@@ -173,17 +173,21 @@ namespace FaxMailFrontend.Pages
 
 		private async Task OnBeforeNavigation(LocationChangingContext context)
 		{
-			if (fileHandler.Files.Count > 0)
+			if (!protector)
 			{
-				var result = Swal.FireAsync(new SweetAlertOptions
+				if (fileHandler.Files.Count > 0)
 				{
-					Title = "Achtung!",
-					Text = "Interne Navigation ist nicht erlaubt un in dieser Applikation nicht sinnvoll.",
-					Icon = SweetAlertIcon.Info,
-					ConfirmButtonText = "OK"
-				});
-				context.PreventNavigation();
+					var result = Swal.FireAsync(new SweetAlertOptions
+					{
+						Title = "Achtung!",
+						Text = "Interne Navigation ist nicht erlaubt!",
+						Icon = SweetAlertIcon.Info,
+						ConfirmButtonText = "OK"
+					});
+					context.PreventNavigation();
+				}
 			}
+			protector = false;
 		}
 		private async Task EmailSplitter(string filename, string path)
 		{
@@ -208,9 +212,6 @@ namespace FaxMailFrontend.Pages
 					Icon = SweetAlertIcon.Info,
 					ConfirmButtonText = "OK"
 				});
-				//eh.Systemmessage = ex.Message;
-				//eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				//navigationManager.NavigateTo($"/ErrorPage");
 			}
 		}
 		private struct FileCheckResult
@@ -356,13 +357,39 @@ namespace FaxMailFrontend.Pages
 			navigationManager.NavigateTo("/EmailSinglePage", true);
 		}
 
-		private void ResetPage()
+		private async Task ResetPage()
 		{
-			
+			protector = true;
 			_module = null;
 			_dropzoneInstance = null;
 			messageText = "Keine Fehler";
+			await DeleteWorkFolder();
 			Refresh();
+		}
+		private async Task DeleteWorkFolder()
+		{
+			try
+			{
+				string path = Path.Combine(env.WebRootPath, "Files", fileHandler.UUID);
+				//var result = await Swal.FireAsync(new SweetAlertOptions
+				//{
+				//	Title = "Achtung!",
+				//	Text = $"{path} wurde gelöscht.",
+				//	Icon = SweetAlertIcon.Info,
+				//	ConfirmButtonText = "OK"
+				//});
+				if (Directory.Exists(path))
+				{
+					Directory.Delete(path, true);
+				}
+				//Directory.Delete(Path.Combine($env.WebRootPath, "Files", fileHandler.UUID), true);
+			}
+			catch (Exception ex)
+			{
+
+			}
+				
+
 		}
 	}
 }

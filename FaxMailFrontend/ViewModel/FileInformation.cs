@@ -30,5 +30,6 @@ namespace FaxMailFrontend.ViewModel
 		public bool AbsendenApproved { get; set; } = false;
 		public bool Autoermittlung { get; set; } = false;
 		public Cascade? Cascade { get; set; }
+
 	}
 }

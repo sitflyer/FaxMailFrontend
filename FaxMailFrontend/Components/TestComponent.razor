@@ -6,8 +6,11 @@
 @using FaxMailFrontend.Components
 @inject NavigationManager navigationManager
 @inject IDokuService docService
+@inject IStammDatenService stammServcice
 @inject IStammDatenService stammDatenService
 @inject ErrorHandler eh
+@inject SweetAlertService Swal
+@inject ILogger<TestComponent> logger
 
 @if (FH != null)
 {
@@ -17,7 +20,7 @@
     }
     else
     {
-        <h4>Dokumentenklasse für das File @FH.Files[FH.selectedFileIndex].FileName</h4>
+        <h4>Übersicht für das File @FH.Files[FH.selectedFileIndex].FileName</h4>
         @if (FH.Files[FH.selectedFileIndex].Autoermittlung)
         {
             <h4>Es wurde automtische Ermittlung vorgegeben.</h4>
@@ -29,7 +32,7 @@
             {
                 <p>Dokuklasse ist null or empty</p>
                 <button @onclick="SetDokumentenKlasse">Setze Dokuklasse</button>
-                <button @onclick="AutomatischeUebernahme">Setze Dokuklasse automatisch</button>
+                <button @onclick="AutomatischeUebernahme">Automatische Ermittlung Dokumentenklasse</button>
             }
             else
             {
@@ -37,37 +40,38 @@
                     Dokuklasse = @FH.Files[FH.selectedFileIndex].DokumentenKlasse
                 </p>
             }
-            @if (FH.Files[FH.selectedFileIndex].KanalartApproved)
-            {
-                <p>
-                    @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)
-                    {
-                        <div style="display: flex; justify-content: space-between;">
-                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>
-                            oder
-                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>
-                        </div>
-                    }
-                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)
-                    {
-                        <p>
-                            Selektierte Kanalart ist: LateScan
-                        </p>
-                    }
-                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)
-                    {
-                        <p>
-                            Selektierte Kanalart ist: EPost
-                        </p>
-                    }
-                    else
-                    {
-                        <p>
-                            <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>
-                        </p>
-                    }
-                </p>
-            }
+            @if (FH.Files[FH.selectedFileIndex].KanalartApproved)  
+            {  
+                <p>  
+                    @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)  
+                    {  
+                        <div style="display: flex; justify-content: space-between;">  
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>  
+                            oder  
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>  
+                        </div>  
+                    }  
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)  
+                    {  
+                        <p>  
+                            Selektierte Kanalart ist: LateScan  
+                        </p>  
+                    }  
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)  
+                    {  
+                        <p>  
+                            Selektierte Kanalart ist: EPost  
+                        </p>  
+                    }  
+                    else  
+                    {  
+                        <p>  
+                            <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>  
+                        </p>  
+                    }  
+                </p>  
+            }  
+
             @if (FH.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved)
             {
                 @if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.KVNR)
@@ -75,7 +79,7 @@
                     @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].KVNR))
                     {
                         <label for="kvnrInput">KVNR:</label>
-                        <input id="kvnrInput" @bind="FH.Files[FH.selectedFileIndex].KVNR" @oninput="ValidateKVNR" />
+                        <input id="kvnrInput" @bind="uebergabe" @oninput="ValidateKVNR" />
                         <button @onclick="OBWeiter" disabled="@(!isKVNRValid)">Übernehmen</button>
                     }
                     else
@@ -90,7 +94,7 @@
                     @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].BTNR))
                     {
                         <label for="btnrInput">BTNR:</label>
-                        <input id="btnrInput" @bind="FH.Files[FH.selectedFileIndex].BTNR" @oninput="ValidateBTNR" />
+                        <input id="btnrInput" @bind="uebergabe" @oninput="ValidateBTNR" />
                         <button @onclick="OBWeiter" disabled="@(!isBTNRValid)">Übernehmen</button>
                     }
                     else
@@ -105,7 +109,7 @@
                     @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].GPNR))
                     {
                         <label for="gpnrInput">GPNR:</label>
-                        <input id="gpnrInput" @bind="FH.Files[FH.selectedFileIndex].GPNR" @oninput="ValidateGPNR" />
+                        <input id="gpnrInput" @bind="uebergabe" @oninput="ValidateGPNR" />
                         <button @onclick="OBWeiter" disabled="@(!isGPNRValid)">Übernehmen</button>
                     }
                     else
@@ -120,7 +124,7 @@
                     @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].LEIK))
                     {
                         <label for="leikInput">LEIK:</label>
-                        <input id="leikInput" @bind="FH.Files[FH.selectedFileIndex].LEIK" @oninput="ValidateLEIK" />
+                        <input id="leikInput" @bind="uebergabe" @oninput="ValidateLEIK" />
                         <button @onclick="OBWeiter" disabled="@(!isLEIKValid)">Übernehmen</button>
                     }
                     else
@@ -150,7 +154,23 @@
             @if (FH.Files[FH.selectedFileIndex].SuchergebnisAppoved)
             {
                 <p>
-                    Das Suchergebnis lautet: <span style="color:red;">XXX YYYY ZZZZZ</span>
+
+                    <p>
+                        <label for="nameInput">Feld 1:</label>
+                        <input id="nameInput" @bind="name" readonly="@string.IsNullOrEmpty(name)" style="@GetInputStyle(name)" />
+                    </p>
+                    <p>
+                        <label for="vornameInput">Feld 2:</label>
+                        <input id="vornameInput" @bind="vorname" readonly="@string.IsNullOrEmpty(vorname)" style="@GetInputStyle(vorname)" />
+                    </p>
+                    <p>
+                        <label for="gebDatumInput">Feld 3:</label>
+                        <input id="gebDatumInput" @bind="gebDatum" readonly="@string.IsNullOrEmpty(gebDatum)" style="@GetInputStyle(gebDatum.ToString())" />
+                    </p>
+                    <p>
+                        <label for="adresseInput">Feld 4:</label>
+                        <input id="adresseInput" @bind="adresse" readonly="@string.IsNullOrEmpty(adresse)" style="@GetInputStyle(adresse)" />
+                    </p>
                 </p>
             }
             @if (FH.Files[FH.selectedFileIndex].WeitereOB)
@@ -211,6 +231,12 @@
     private bool isBTNRValid = false;
     private bool isGPNRValid = false;
     private bool isLEIKValid = false;
+
+    private string name = "";
+    private string vorname = "";
+    private string gebDatum = "";
+    private string adresse = "";
+    private string uebergabe = "";
     private async Task SetKanalArt(KanalArt kanalArt)
     {
         FH!.Files[FH.selectedFileIndex].KanalArt = kanalArt;
@@ -218,10 +244,16 @@
         FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
         StateHasChanged();
     }
+
+    private string GetInputStyle(string value)
+    {
+        return value.Contains("nicht gefunden") ? "border: 10px solid red;" + $"width: {Math.Max(value.Length * 8, 100)}px;" : $"width: {Math.Max(value.Length * 8, 100)}px;";
+    }
     private void ValidateGPNR(ChangeEventArgs e)
     {
         var input = e.Value?.ToString();
         isGPNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+
     }
     private void ValidateLEIK(ChangeEventArgs e)
     {
@@ -252,21 +284,48 @@
         await OnFileHandlerChanged.InvokeAsync(FH);
         StateHasChanged();
     }
+
+    // private async Task OBWeiter1()
+    // {
+    //     var result = Swal.FireAsync(new SweetAlertOptions
+    //         {
+    //             Title = "Achtung!",
+    //             Text = "Interne Navigation ist nicht erlaubt!",
+    //             Icon = SweetAlertIcon.Info,
+    //             ConfirmButtonText = "OK"
+    //         });
+    // }
     private async Task OBWeiter()
     {
+        FH.Files[FH.selectedFileIndex].KVNR = uebergabe;
         switch (FH!.Files[FH.selectedFileIndex].Ordnugsbegrff)
         {
             case Ordnungsbegriff.KVNR:
-                
+                FH.Files[FH.selectedFileIndex].KVNR = uebergabe;
+                if (FH.Files[FH.selectedFileIndex].KVNR.Length == 9)
+                {
+                    await KVNRHandler(stammDatenService.GetVersichertenByKVNR9Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                }
+                else if (FH.Files[FH.selectedFileIndex].KVNR.Length == 10)
+                {
+                    await KVNRHandler(stammDatenService.GetVersichertenByKVNR10Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                }
+                else
+                {
+                    throw new Exception("KVNR ist nicht korrekt");
+                }
                 break;
             case Ordnungsbegriff.BTNR:
-                
+                FH.Files[FH.selectedFileIndex].BTNR = uebergabe;
+                await BTNRHandler(stammDatenService.GetVersichertenByBTNRSync(FH.Files[FH.selectedFileIndex].BTNR));
                 break;
             case Ordnungsbegriff.GPNR:
-                
+                FH.Files[FH.selectedFileIndex].GPNR = uebergabe;
+                await GPNRHandler(stammDatenService.GetVersichertenByBPNRSync(FH.Files[FH.selectedFileIndex].GPNR));
                 break;
             case Ordnungsbegriff.Leik:
-                
+                FH.Files[FH.selectedFileIndex].LEIK = uebergabe;
+                await LeikHandler(stammDatenService.GetVersichertenByLeikSync(FH.Files[FH.selectedFileIndex].BTNR));
                 break;
             case Ordnungsbegriff.Keiner:
 
@@ -281,6 +340,292 @@
         await OnFileHandlerChanged.InvokeAsync(FH);
         StateHasChanged();
     }
+
+    private async Task BTNRHandler(List<IStammdatenFirmenkunde> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        string Hausnummer = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Firmenname))
+            {
+                name = "Firmenname nicht gefunden";
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                name = "Firma";
+                vorname = stammdatenVersicherte[0].Firmenname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Hausnummer))
+            {
+                Strasse = "HN NF ";
+            }
+            else
+            {
+                Hausnummer = stammdatenVersicherte[0].Hausnummer!;
+            }
+            gebDatum = string.Concat(PLZ, Ort);
+            adresse = string.Concat(Strasse, Hausnummer);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOB = true;
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+        }
+    }
+
+    private async Task GPNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Name))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Name!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Geburtsdatum))
+            {
+                gebDatum = "Geburtsdatum nicht gefunden";
+            }
+            else
+            {
+                gebDatum = stammdatenVersicherte[0].Geburtsdatum!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            adresse = string.Concat(PLZ, Ort, Strasse);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOB = true;
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            name = "Name nicht gefunden";
+            vorname = "Vorname nicht gefunden";
+            gebDatum = "Geburtsdatum nicht gefunden";
+            adresse = "Adresse nicht gefunden";
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+    private async Task LeikHandler(List<ILeistungserbringerLanr> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        string Hausnummer = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Nachname))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Nachname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+            
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Hausnummer))
+            {
+                Strasse = "HN NF ";
+            }
+            else
+            {
+                Hausnummer = stammdatenVersicherte[0].Hausnummer!;
+            }
+            gebDatum = string.Concat(PLZ, Ort);
+            adresse = string.Concat(Strasse,Hausnummer);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOB = true;
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            name = "Name nicht gefunden";
+            vorname = "Vorname nicht gefunden";
+            gebDatum = "Geburtsdatum nicht gefunden";
+            adresse = "Adresse nicht gefunden";
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+    private async Task KVNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Name))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Name!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Geburtsdatum))
+            {
+                gebDatum = "Geburtsdatum nicht gefunden";
+            }
+            else
+            {
+                gebDatum = stammdatenVersicherte[0].Geburtsdatum!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            adresse = string.Concat(PLZ, Ort, Strasse);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOB = true;
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            name = "Name nicht gefunden";
+            vorname = "Vorname nicht gefunden";
+            gebDatum = "Geburtsdatum nicht gefunden";
+            adresse = "Adresse nicht gefunden";
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+
     private async Task WeitereOBWeiter()
     {
         FH!.Files[FH.selectedFileIndex].Fallbuendelnummer = "FB123454";

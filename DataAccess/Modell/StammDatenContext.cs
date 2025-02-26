@@ -18,7 +18,9 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 	{
 	}
 
-	public virtual DbSet<LeistungserbringerIk> LeistungserbringerIks { get; set; }
+	public virtual DbSet<GposListe> GposListes { get; set; }
+
+	public virtual DbSet<LeistungserbringerLanr> LeistungserbringerLanrs { get; set; }
 
 	public virtual DbSet<StammdatenFirmenkunde> StammdatenFirmenkundes { get; set; }
 
@@ -29,17 +31,34 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		modelBuilder.Entity<LeistungserbringerIk>(entity =>
+		modelBuilder.Entity<GposListe>(entity =>
 		{
 			entity
 				.HasNoKey()
-				.ToTable("LEISTUNGSERBRINGER_IK");
+				.ToTable("GPOS_LISTE");
 
-			entity.Property(e => e.Betriebsstaette)
+			entity.Property(e => e.BezeichnungGebührenposition)
+				.HasMaxLength(100)
+				.HasColumnName("BEZEICHNUNG_GEBÜHRENPOSITION");
+			entity.Property(e => e.Id)
+				.ValueGeneratedOnAdd()
+				.HasColumnName("ID");
+			entity.Property(e => e.Produktgruppe)
+				.HasMaxLength(60)
+				.HasColumnName("PRODUKTGRUPPE");
+		});
+
+		modelBuilder.Entity<LeistungserbringerLanr>(entity =>
+		{
+			entity
+				.HasNoKey()
+				.ToTable("LEISTUNGSERBRINGER_LANR");
+
+			entity.Property(e => e.Arztnummer)
 				.HasMaxLength(12)
-				.HasColumnName("BETRIEBSSTAETTE");
+				.HasColumnName("ARZTNUMMER");
 			entity.Property(e => e.Bezeichnung)
-				.HasMaxLength(40)
+				.HasMaxLength(30)
 				.HasColumnName("BEZEICHNUNG");
 			entity.Property(e => e.Bpnr)
 				.HasMaxLength(10)
@@ -47,6 +66,9 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 			entity.Property(e => e.Hausnummer)
 				.HasMaxLength(10)
 				.HasColumnName("HAUSNUMMER");
+			entity.Property(e => e.Nachname)
+				.HasMaxLength(60)
+				.HasColumnName("NACHNAME");
 			entity.Property(e => e.Name1)
 				.HasMaxLength(60)
 				.HasColumnName("NAME1");
@@ -65,6 +87,9 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 			entity.Property(e => e.Plz)
 				.HasMaxLength(10)
 				.HasColumnName("PLZ");
+			entity.Property(e => e.Record)
+				.ValueGeneratedOnAdd()
+				.HasColumnName("RECORD");
 			entity.Property(e => e.Rolle)
 				.HasMaxLength(6)
 				.HasColumnName("ROLLE");
@@ -77,6 +102,9 @@ public partial class StammDatenContext : DbContext, IStammDatenContext
 			entity.Property(e => e.Verarbdatum)
 				.HasMaxLength(20)
 				.HasColumnName("VERARBDATUM");
+			entity.Property(e => e.Vorname)
+				.HasMaxLength(60)
+				.HasColumnName("VORNAME");
 		});
 
 		modelBuilder.Entity<StammdatenFirmenkunde>(entity =>

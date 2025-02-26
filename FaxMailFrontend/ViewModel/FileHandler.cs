@@ -15,9 +15,7 @@ namespace FaxMailFrontend.ViewModel
 		public int selectedFileIndex = -1;
 		public string Targetfolder { get; set; } = string.Empty;
 		public string Protokollfolder { get; set; } = string.Empty;
-
 		public List<IDokumentenProcessor> DokumentenListe { get; set; }
-
 		public FileHandler(IDokuService service)
 		{
 			try
@@ -30,14 +28,6 @@ namespace FaxMailFrontend.ViewModel
 				ErrorMessage = ex.Message;
 			}
 		}
-
-		//public FileHandler(string basepath, string UUID)
-		//{
-		//	Path = basepath;
-		//	this.UUID = UUID;
-		//	LoadFiles();
-		//}
-
 		public void AddFile(string filename, byte[] filedata, int index)
 		{
 			Files.Add(new FileInformation
@@ -47,42 +37,19 @@ namespace FaxMailFrontend.ViewModel
 				FileData = filedata
 			});
 		}
-
-		//public void LoadFiles()
-		//{
-		//	try
-		//	{
-		//		Files.Clear();
-		//		if (Directory.Exists(Path))
-		//		{
-		//			var files = Directory.GetFiles(Path);
-		//			int id = 1;
-		//			foreach (var file in files)
-		//			{
-		//				Files.Add(new FileInformation
-		//				{
-		//					ID = id,
-		//					FileName = System.IO.Path.GetFileName(file),
-		//					FileData = File.ReadAllBytes(file)
-		//				});
-		//			}
-		//		}
-		//	}
-		//	catch (Exception ex)
-		//	{
-		//		ErrorMessage = ex.Message;
-		//		throw;
-		//	}
-		//}
-
 		internal bool DeleteFile(string filename)
 		{
 			try
 			{
 				var F = Files.Where(f => f.FileName == filename).FirstOrDefault();
 				if (F is not null)
-					if (File.Exists(Path + F.FileName))
-						File.Delete(Path + F.FileName);
+				{
+					string path = System.IO.Path.Combine(Path, UUID, F.FileName);
+					if (File.Exists(path))
+					{
+						File.Delete(path);
+					}
+				}				
 				Files.RemoveAll(f => f.FileName == filename);
 				foreach (var file in Files)
 				{
@@ -96,7 +63,6 @@ namespace FaxMailFrontend.ViewModel
 				return false;
 			}
 		}
-
 		public static string? CheckFile(string filename)
 		{
 			if (!CheckFileSize(filename))
@@ -114,13 +80,11 @@ namespace FaxMailFrontend.ViewModel
 			}
 			return null;
 		}
-
 		private static bool CheckSpecialChar(string filename)
 		{
 			string specialChars = @"(!@#$%^&*()-_=+\|[]{};:/?.>)";
 			return filename.Any(c => specialChars.Contains(c));
 		}
-
 		private static bool CheckPassword(string filename)
 		{
 			try
@@ -135,14 +99,12 @@ namespace FaxMailFrontend.ViewModel
 				return false;
 			}
 		}
-
 		private static bool CheckType(string filename)
 		{
 			string[] allowedExtensions = { ".pdf", ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".txt", ".text" };
 			string fileExtension = System.IO.Path.GetExtension(filename).ToLower();
 			return allowedExtensions.Contains(fileExtension);
 		}
-
 		private static bool CheckPageCount(string filename)
 		{
 			try
@@ -162,7 +124,6 @@ namespace FaxMailFrontend.ViewModel
 				return false;
 			}
 		}
-
 		private static bool CheckFileSize(string filename)
 		{
 			const long maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
