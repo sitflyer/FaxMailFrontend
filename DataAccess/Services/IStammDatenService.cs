@@ -6,6 +6,10 @@ namespace DataAccessDLL.Services
 	{
 		Task<List<IStammdatenVersicherte>> GetAllVersicherte();
 		List<IStammdatenVersicherte> GetAllVersicherteSync();
+		Task<List<IGposListe>> GetGPosliste();
+		List<IGposListe> GetGPoslisteSync();
+		Task<List<string>> GetProduktgruppenDistinct();
+		List<string> GetProduktgruppenDistinctSync();
 		Task<List<IStammdatenVersicherte>> GetVersichertenByBPNR(string bpnr);
 		List<IStammdatenVersicherte> GetVersichertenByBPNRSync(string bpnr);
 		Task<List<IStammdatenFirmenkunde>> GetVersichertenByBTNR(string btnr);

@@ -28,14 +28,14 @@ namespace MailDLL
 					{
 						//if (storageAttachment.MimeType is not null)
 						//{
-							var mimePart = new MimePart(storageAttachment.MimeType)
-							{
-								Content = new MimeContent(new MemoryStream(storageAttachment.Data)),
-								ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-								ContentTransferEncoding = ContentEncoding.Base64,
-								FileName = storageAttachment.FileName
-							};
-							multipart.Add(mimePart);
+						var mimePart = new MimePart(storageAttachment.MimeType)
+						{
+							Content = new MimeContent(new MemoryStream(storageAttachment.Data)),
+							ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+							ContentTransferEncoding = ContentEncoding.Base64,
+							FileName = storageAttachment.FileName
+						};
+						multipart.Add(mimePart);
 						//}
 					}
 				}

@@ -20,5 +20,7 @@ namespace DataAccessDLL.Services
 		List<string> GettAllSubKategoriesByKategorySync(string kategorie);
 		Task<IDokumentenProcessor> GettDocuProByName(string dokuklasse);
 		IDokumentenProcessor GettDocuProByNameSync(string dokuklasse);
+		List<string> GettAllFavoritesByUserSync(long userID);
+		Task<List<string>> GettAllFavoritesByUser(long userID);
 	}
 }

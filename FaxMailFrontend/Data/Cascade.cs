@@ -13,6 +13,6 @@
 			OBVorgabe = (Ordnungsbegriff)ob;
 			WOBVorgabe = (WeitereOrdnungsbegriffe)wob;
 			BodyVeraktenVorgabe = (BodyVeraktung)bv;
-		}		
+		}
 	}
 }

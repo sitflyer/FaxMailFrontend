@@ -1,12 +1,11 @@
 ﻿using CurrieTechnologies.Razor.SweetAlert2;
+using DataAccessDLL.Interfaces;
+using DataAccessDLL.Modell;
+using DataAccessDLL.Services;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
 using Microsoft.Identity.Web;
 using NLog.Web;
-using static MsgReader.Outlook.Storage;
-using DataAccessDLL.Interfaces;
-using DataAccessDLL.Modell;
-using DataAccessDLL.Services;
 
 
 namespace FaxMailFrontend
@@ -38,8 +37,20 @@ namespace FaxMailFrontend
 			builder.Services.AddSweetAlert2();
 			builder.Services.AddScoped<IUserService, UserService>();
 			builder.Services.AddScoped<IDokuService, DokuService>();
-			builder.Services.AddScoped<IStammDatenService,StammDatenService>();
-			builder.Services.AddScoped<FileHandler>();
+			builder.Services.AddScoped<IStammDatenService, StammDatenService>();
+
+			builder.Services.AddScoped<FileHandler>(provider =>
+			{
+				var userService = provider.GetRequiredService<IUserService>();
+				return new FileHandler(
+					provider.GetRequiredService<IDokuService>(),
+					provider.GetRequiredService<IStammDatenService>(),
+					userService.Vorname,
+					userService.Nachname,
+					userService.Telefon,
+					userService.Email
+				);
+			});
 			builder.Services.AddScoped<ErrorHandler>(provider => new ErrorHandler(ErrorCode.KeinFehler, ""));
 			builder.Services.AddScoped<IWorkingContext>(provider => new WorkingContext(GetWorkingCntext()));
 			builder.Services.AddScoped<IStammDatenContext>(provider => new StammDatenContext(GetStammDatenContext()));

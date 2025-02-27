@@ -86,9 +86,24 @@
 
             if (result.IsConfirmed)
             {
+                if (fileHandler.Files.Count == 1)
+                {
+                    if (fileHandler.DeleteFile(filename))
+                    {
+                        fileHandler.Files.Clear();
+                        await OnPathChanged.InvokeAsync(null);
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                        eh.EC = ErrorCode.KeineDateiGeloescht;
+                        navigationManager.NavigateTo($"/ErrorPage");
+                    }
+                }
+                
                 if (fileHandler.DeleteFile(filename))
                 {
-                    //fileHandler.LoadFiles();
                     await OnPathChanged.InvokeAsync(null);
                     StateHasChanged();
                 }

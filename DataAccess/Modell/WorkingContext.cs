@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DataAccessDLL.Interfaces;
+﻿using DataAccessDLL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessDLL.Modell;

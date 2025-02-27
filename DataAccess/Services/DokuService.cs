@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DataAccessDLL.Interfaces;
+﻿using DataAccessDLL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessDLL.Services
@@ -261,6 +256,34 @@ namespace DataAccessDLL.Services
 			catch (Exception ex)
 			{
 				throw new Exception("Fehler beim Lesen der Dokumentenprozessoren: " + ex.Message);
+			}
+		}
+		public List<string> GettAllFavoritesByUserSync(long userID)
+		{
+			try
+			{
+				return WorkingContext.Favoritens
+					.Where(f => f.NutzerId == userID)
+					.Select(f => f.Dokumentenklasse)
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Favoriten: " + ex.Message);
+			}
+		}
+		public async Task<List<string>> GettAllFavoritesByUser(long userID)
+		{
+			try
+			{
+				return await WorkingContext.Favoritens
+					.Where(f => f.NutzerId == userID)
+					.Select(f => f.Dokumentenklasse)
+					.ToListAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der Favoriten: " + ex.Message);
 			}
 		}
 	}

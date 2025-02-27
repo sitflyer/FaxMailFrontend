@@ -69,7 +69,6 @@ namespace MailDLL
 				{
 					att.WriteAttachmentToFile(Path.Combine(Path.GetDirectoryName(Filename)!, att.Dateiname));
 					filelist.Add(Path.Combine(Path.GetDirectoryName(Filename)!, att.Dateiname));
-					
 				}
 				catch (Exception ex)
 				{
@@ -94,13 +93,11 @@ namespace MailDLL
 			{
 				throw new Exception("Die Mail wurde nicht geladen.");
 			}
-
 			var textPart = _myMessage.TextBody ?? _myMessage.HtmlBody;
 			if (textPart == null)
 			{
 				throw new Exception("Der Mail-Body ist leer.");
 			}
-
 			return textPart;
 		}
 	}

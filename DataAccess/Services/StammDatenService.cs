@@ -1,11 +1,5 @@
 ﻿using DataAccessDLL.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccessDLL.Services
 {
@@ -81,7 +75,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Versicherten: " + ex.Message);
 			}
 		}
-
 		public List<IStammdatenVersicherte> GetVersichertenByKVNR10Sync(string kvnr10)
 		{
 			try
@@ -96,7 +89,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Versicherten: " + ex.Message);
 			}
 		}
-
 		public async Task<List<IStammdatenVersicherte>> GetVersichertenByBPNR(string bpnr)
 		{
 			try
@@ -111,7 +103,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Versicherten: " + ex.Message);
 			}
 		}
-
 		public List<IStammdatenVersicherte> GetVersichertenByBPNRSync(string bpnr)
 		{
 			try
@@ -126,7 +117,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Versicherten: " + ex.Message);
 			}
 		}
-
 		public async Task<List<IStammdatenFirmenkunde>> GetVersichertenByBTNR(string btnr)
 		{
 			try
@@ -155,10 +145,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Firmenkunden: " + ex.Message);
 			}
 		}
-
-
-
-
 		public async Task<List<ILeistungserbringerLanr>> GetVersichertenByLeik(string bpnr)
 		{
 			try
@@ -173,7 +159,6 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Leistungserbringer: " + ex.Message);
 			}
 		}
-
 		public List<ILeistungserbringerLanr> GetVersichertenByLeikSync(string bpnr)
 		{
 			try
@@ -186,6 +171,56 @@ namespace DataAccessDLL.Services
 			catch (Exception ex)
 			{
 				throw new Exception("Fehler beim Lesen der Leistungserbringer: " + ex.Message);
+			}
+		}
+		public async Task<List<IGposListe>> GetGPosliste()
+		{
+			try
+			{
+				return await StammContext.GposListes.Cast<IGposListe>().ToListAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der GPosListe: " + ex.Message);
+			}
+		}
+		public List<IGposListe> GetGPoslisteSync()
+		{
+			try
+			{
+				return StammContext.GposListes.Cast<IGposListe>().ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der GPosListe: " + ex.Message);
+			}
+		}
+		public List<string> GetProduktgruppenDistinctSync()
+		{
+			try
+			{
+				return StammContext.GposListes
+					.Select(g => g.Produktgruppe)
+					.Distinct().OrderBy(g => g)
+					.ToList();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der GPosListe: " + ex.Message);
+			}
+		}
+		public async Task<List<string>> GetProduktgruppenDistinct()
+		{
+			try
+			{
+				return await StammContext.GposListes
+					.Select(g => g.Produktgruppe)
+					.Distinct().OrderBy(g => g)
+					.ToListAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Lesen der GPosListe: " + ex.Message);
 			}
 		}
 	}

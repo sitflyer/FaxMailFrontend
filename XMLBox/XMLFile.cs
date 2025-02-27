@@ -59,8 +59,6 @@ namespace XMLBox
 			{
 				throw new Exception($"Der String {dateString} konnte nicht in ein Datum konvertirert werden werden. {ex.Message}");
 			}
-			date = DateTime.Now;
-			return false;
 		}
 		public static bool StringToDate(out DateTime date, string dateString)
 		{

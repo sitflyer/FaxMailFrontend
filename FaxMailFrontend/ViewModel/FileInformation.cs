@@ -12,7 +12,7 @@ namespace FaxMailFrontend.ViewModel
 		public string DokumentenKlasse { get; set; } = string.Empty;
 		public KanalArt KanalArt { get; set; } = KanalArt.unbestimmt;
 		public Ordnungsbegriff Ordnugsbegrff = Ordnungsbegriff.unbestimmt;
-		public WeitereOrdnungsbegriffe WOB { get; set; } = WeitereOrdnungsbegriffe.unbestimmt;
+		public WeitereOrdnungsbegriffe WOB { get; set; } = Data.WeitereOrdnungsbegriffe.unbestimmt;
 		public string BTNR { get; set; } = string.Empty;
 		public string KVNR { get; set; } = string.Empty;
 		public string GPNR { get; set; } = string.Empty;
@@ -20,12 +20,16 @@ namespace FaxMailFrontend.ViewModel
 		public string Fallnummer { get; set; } = string.Empty;
 		public string Fallbuendelnummer { get; set; } = string.Empty;
 		public string Produktgruppe { get; set; } = string.Empty;
-		public bool MailBodyVerakten = true;
+		public bool isEmail { get; set; } = false;
+		public bool WeitereOrdnungsbegriffe { get; set; } = false;
 		public bool MailBodyApproved = false;
 		public bool KanalartApproved { get; set; } = false;
 		public bool OrdnungsbegriffAppoved { get; set; } = false;
 		public bool SuchergebnisAppoved { get; set; } = false;
-		public bool WeitereOB { get; set; } = false;
+		public bool WeitereOBApproved { get; set; } = false;
+		public bool WobSelected { get; set; } = false;
+		public int filesize { get; set; } = 0;
+
 		public BodyVeraktung MailbodyVerakten { get; set; } = BodyVeraktung.unbestimmt;
 		public bool AbsendenApproved { get; set; } = false;
 		public bool Autoermittlung { get; set; } = false;
