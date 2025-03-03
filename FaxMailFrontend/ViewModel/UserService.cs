@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using DataAccessDLL.Interfaces;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
@@ -6,13 +7,13 @@ namespace FaxMailFrontend.ViewModel
 {
 	public class UserService : IUserService
 	{
+		public INutzer MNutzer { get; set; }
 
 
-		private readonly HttpClient _httpClient;
 
-		public UserService(HttpClient httpClient)
+		public UserService()
 		{
-			_httpClient = httpClient;
+			
 		}
 
 		public async Task<IUser> GetUserAsync()

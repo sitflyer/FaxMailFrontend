@@ -15,18 +15,17 @@ namespace FaxMailFrontend.ViewModel
 		public string Protokollfolder { get; set; } = string.Empty;
 		public List<IDokumentenProcessor> DokumentenListe { get; set; }
 		public List<string> GPOSList { get; set; } = new List<string>();
-		public long UserID { get; set; } = 1;
-		public string Vorname { get; set; } = "";
-		public string Name { get; set; } = "";
-		public string Email { get; set; } = "";
-		public string Telefon { get; set; } = "";
+		public INutzer Nutzer { get; set; }
 
-		public FileHandler(IDokuService service, IStammDatenService stammDaten, string vorname, string nachname, string telefone, string email)
+		//public long UserID { get; set; } = 1;
+		//public string Vorname { get; set; } = "";
+		//public string Name { get; set; } = "";
+		//public string Email { get; set; } = "";
+		//public string Telefon { get; set; } = "";
+
+		public FileHandler(IDokuService service, IStammDatenService stammDaten, INutzer nutzer)
 		{
-			Vorname = vorname;
-			Name = nachname;
-			Telefon = telefone;
-			Email = email;
+			Nutzer = nutzer;
 			try
 			{
 				DokumentenListe = service.GetAllDocumentsSync();
@@ -37,13 +36,6 @@ namespace FaxMailFrontend.ViewModel
 				DokumentenListe = new List<IDokumentenProcessor>();
 				ErrorMessage = ex.Message;
 			}
-		}
-		public void SetUser(string vorname, string nachname, string telefone, string email)
-		{
-			Vorname = vorname;
-			Name = nachname;
-			Telefon = telefone;
-			Email = email;
 		}
 		public void AddFile(string filename, byte[] filedata, int index)
 		{

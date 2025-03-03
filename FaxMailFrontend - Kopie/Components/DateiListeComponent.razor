@@ -1,0 +1,32 @@
+﻿@using FaxMailFrontend.Data
+@using FaxMailFrontend.ViewModel
+@namespace FaxMailFrontend.Components
+
+@if (fileHandler is not null)
+{
+    <div style="border: 2px solid black; padding: 5px; background-color: lightgray; margin: 10px;">
+        <p>
+        <h3>@fileHandler.Files.Count Verarbeitete Dateien</h3>
+        </p>
+        <p>
+            <div style="text-align: center;">
+                <table style="margin: auto; text-align: center; border: 2px solid black; width: 100%;">
+                    @foreach (FileInformation file in @fileHandler.Files)
+                    {
+                        <tr style="margin: auto; text-align: left; border: 2px solid black;">
+                            <td style="margin: auto; text-align: left; border: 2px solid black;">Datei @_counter:</td>
+                            <td style="margin: auto; text-align: right; border: 2px solid black;">@file.FileName</td>
+                        </tr>
+                        _counter++;
+                    }
+                </table>
+            </div>
+        </p>
+    </div>
+}
+
+@code {
+    private int _counter = 1;
+    [Parameter]
+    public FileHandler? fileHandler { get; set; }
+}

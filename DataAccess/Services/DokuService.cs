@@ -1,5 +1,7 @@
 ﻿using DataAccessDLL.Interfaces;
+using DataAccessDLL.Modell;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Sockets;
 
 namespace DataAccessDLL.Services
 {
@@ -284,6 +286,36 @@ namespace DataAccessDLL.Services
 			catch (Exception ex)
 			{
 				throw new Exception("Fehler beim Lesen der Favoriten: " + ex.Message);
+			}
+		}
+		public async Task AddFavorite(long id, string dokklasse)
+		{
+			try
+			{
+				Favoriten fav = new Favoriten();
+				fav.NutzerId = id;
+				fav.Dokumentenklasse = dokklasse;
+				WorkingContext.Favoritens.Add(fav);
+				await WorkingContext.SaveChangesAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Hinzufügen des Favoriten: " + ex.Message);
+			}
+		}
+		public async Task DropFavorite(long id, string dokklasse)
+		{
+			try
+			{
+				Favoriten fav = await WorkingContext.Favoritens
+					.Where(f => f.NutzerId == id && f.Dokumentenklasse == dokklasse)
+					.FirstAsync();
+				WorkingContext.Favoritens.Remove(fav);
+				await WorkingContext.SaveChangesAsync();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Fehler beim Löschen des Favoriten: " + ex.Message);
 			}
 		}
 	}

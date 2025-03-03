@@ -37,7 +37,6 @@ namespace FaxMailFrontend.Pages
 		private int uploadcounter = 0;
 		private IBrowserFile filemerker;
 		private bool protector = false;
-		private bool loggedOut = false;
 		protected override async Task OnInitializedAsync()
 		{
 
@@ -405,7 +404,7 @@ namespace FaxMailFrontend.Pages
 			DokumentZeilen.Add("<inboundchannel>EM</inboundchannel>");
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "receivedDate", DateTime.Now.ToString("dd-MM-yyyy")));
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "processtimestamp", DateTime.Now.ToString("dd-MM-yyyy")));
-			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentFrom", fileHandler.Vorname + " " + fileHandler.Name));
+			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentFrom", fileHandler.Nutzer.Vorname + " " + fileHandler.Nutzer.Nachname));
 			if (file.KanalArt == KanalArt.EPost)
 			{
 				DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentTo", "Pfad_EPost"));

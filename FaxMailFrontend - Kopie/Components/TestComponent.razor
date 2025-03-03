@@ -1,0 +1,1187 @@
+﻿@namespace FaxMailFrontend
+@using DataAccessDLL.Services
+@using DataAccessDLL.Interfaces
+@using DataAccessDLL.Modell
+@using FaxMailFrontend.Data
+@using FaxMailFrontend.Components
+@inject NavigationManager navigationManager
+@inject IDokuService docService
+@inject IStammDatenService stammDatenService
+@inject ErrorHandler eh
+@inject SweetAlertService Swal
+@inject ILogger<TestComponent> logger
+
+@if (FH != null)
+{
+    if (FH.Files.Count == 0 || FH.selectedFileIndex == -1)
+    {
+        <p>Keine Datei ausgewählt</p>
+    }
+    else
+    {
+        <h4>Übersicht für das File @FH.Files[FH.selectedFileIndex].FileName</h4>
+        @if (FH.Files[FH.selectedFileIndex].Autoermittlung)
+        {
+            <h4>Es wurde automtische Ermittlung vorgegeben.</h4>
+            <button class="btn-primary" @onclick="ManuelleUebernahme">Auf manuell umstellen</button>
+        }
+        else
+        {
+            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].DokumentenKlasse))
+            {
+                @if (nutzeFav)
+                {
+                    <div class="dropdown" style="flex: 1;">
+                        <label for="dokuKlasse">Dokumentenklasse:</label>
+                        <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%; height: 38px;">
+                            @foreach (var document in Favorites)
+                            {
+                                <option value="@document">@document</option>
+                            }
+                        </select>
+                        <div style="display: flex; justify-content: center; margin-top: 10px;">
+                            <button class="btn-outline-primary" @onclick="SetDokumentenKlasse" style="width: 100%;" disabled="@(string.IsNullOrEmpty(dokumentenKlasse))">Weiter</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="display: flex; justify-content: space-between; margin: 10px auto;">
+                        <button class="btn-primary" @onclick="FavoritenHinzufuegen" style="flex: 1; margin-right: 10px;">
+                            <img src="@GetFavoritIcon()" alt="Favoriten" style="vertical-align: middle; margin-right: 5px; width: 30px; height: 30px;" />Favoriten hinzufügen/abwählen
+                        </button>
+                        <button class="btn-primary" @onclick="SwitchToFav" style="flex: 1;">Favoriten nutzen</button>
+                    </div>
+                    <div class="dropdown-menus" style="display: flex; justify-content: space-between;">
+                        <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                            <label for="category">Kategorie:</label>
+                            <select name="" id="category" @onchange="OnCategoryChange" style="width: 100%; height: 38px;">
+                                @foreach (var category in Categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                            <button class="btn-outline-primary" @onclick="AutomatischeUebernahme" style="display: block; margin: 10px auto;">Automatische Übernahme der Dokumentenklasse</button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(selectedCategory))
+                        {
+                            <div class="dropdown" style="flex: 1; margin-right: 10px;">
+                                <label for="unterkategorie">Unterkategorie:</label>
+                                <select id="unterkategorie" @onchange="OnSubCategoryChange" style="width: 100%; height: 38px;">
+                                    @foreach (var unterkategorie in Unterkategorien)
+                                    {
+                                        <option value="@unterkategorie">@unterkategorie</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(selectedunterkategory))
+                        {
+                            <div class="dropdown" style="flex: 1;">
+                                <label for="dokuKlasse">Dokumentenklasse:</label>
+                                <select id="dokumentenklasse" @bind="dokumentenKlasse" style="width: 100%; height: 38px;">
+                                    @foreach (var document in dokumente)
+                                    {
+                                        <option value="@document">@document</option>
+                                    }
+                                </select>
+                                <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                    <button class="btn-outline-primary" @onclick="SetDokumentenKlasse" style="width: 100%;" disabled="@(string.IsNullOrEmpty(dokumentenKlasse))">Weiter</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <p>
+                    Dokuklasse = @FH.Files[FH.selectedFileIndex].DokumentenKlasse
+                </p>
+            }
+            @if (FH.Files[FH.selectedFileIndex].KanalartApproved)  
+            {  
+                <p>  
+                    @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)  
+                    {  
+                        <div style="display: flex; justify-content: space-between;">  
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>  
+                            oder  
+                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>  
+                        </div>  
+                    }  
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)  
+                    {  
+                        <p>  
+                            Selektierte Kanalart ist: LateScan  
+                        </p>  
+                    }  
+                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)  
+                    {  
+                        <p>  
+                            Selektierte Kanalart ist: EPost  
+                        </p>  
+                    }  
+                    else  
+                    {  
+                        <p>  
+                            <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>  
+                        </p>  
+                    }  
+                </p>  
+            }  
+            @if (FH.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved)
+            {
+                @if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.KVNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].KVNR))
+                    {
+                        <label for="kvnrInput">KVNR:</label>
+                        <input id="kvnrInput" @bind="uebergabe" @oninput="ValidateKVNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isKVNRValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte KVNR = @FH.Files[FH.selectedFileIndex].KVNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.BTNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].BTNR))
+                    {
+                        <label for="btnrInput">BTNR:</label>
+                        <input id="btnrInput" @bind="uebergabe" @oninput="ValidateBTNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isBTNRValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte BTNR = @FH.Files[FH.selectedFileIndex].BTNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.GPNR)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].GPNR))
+                    {
+                        <label for="gpnrInput">GPNR:</label>
+                        <input id="gpnrInput" @bind="uebergabe" @oninput="ValidateGPNR" />
+                        <button @onclick="OBWeiter" disabled="@(!isGPNRValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte GPNR = @FH.Files[FH.selectedFileIndex].GPNR
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Leik)
+                {
+                    @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].LEIK))
+                    {
+                        <label for="leikInput">LEIK:</label>
+                        <input id="leikInput" @bind="uebergabe" @oninput="ValidateLEIK" />
+                        <button @onclick="OBWeiter" disabled="@(!isLEIKValid)">Übernehmen</button>
+                    }
+                    else
+                    {
+                        <p>
+                            Selektierte LEIK = @FH.Files[FH.selectedFileIndex].LEIK
+                        </p>
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Keiner)
+                {
+                    @if (FH.Files[FH.selectedFileIndex].Ordnugsbegrff == Ordnungsbegriff.Keiner)
+                    {
+                        <p>
+                            Es wird kein Ordnungsbegriff benötigt
+                        </p>
+                        @OBWeiter()
+                    }
+                }
+                else
+                {
+                    <p>
+                        <strong style="color:red;">Ordnungsbegriffsermittlung ist fehlgeschlagen!</strong>
+                    </p>
+                }
+            }
+            @if (FH.Files[FH.selectedFileIndex].SuchergebnisAppoved)
+            {
+                @if (!nolookupfound)
+                {
+                    <p>
+                        <div style="display: flex; justify-content: center;">
+                            <table>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <label for="nameInput">Feld 1:</label>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <input id="nameInput" @bind="name" readonly="true" style="@GetInputStyle(name)" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <label for="vornameInput">Feld 2:</label>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <input id="vornameInput" @bind="vorname" readonly="true" style="@GetInputStyle(vorname)" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <label for="gebDatumInput">Feld 3:</label>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <input id="gebDatumInput" @bind="gebDatum" readonly="true" style="@GetInputStyle(gebDatum.ToString())" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <label for="adresseInput">Feld 4:</label>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <input id="adresseInput" @bind="adresse" readonly="true" style="@GetInputStyle(adresse)" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </p>
+                }
+                else
+                {
+                    <p>  
+                        <strong style="color:red;">Keine Daten passend zur Eingabe gefunden!</strong>  
+                    </p>
+                }
+            }
+            @if (FH.Files[FH.selectedFileIndex].WeitereOBApproved)
+            {
+                @if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.unbestimmt)
+                {
+                    <p>
+                        <strong style="color:red;">Weitere Ordnungsbegriffe Ermittlung ist fehlgeschlagen!</strong>
+                    </p>
+                }
+                else
+                {
+                    @if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+                    {
+                        <p>
+                            Weitere Ordnungsbegriffe sind nicht vorgesehen!
+                        </p>
+                    }
+                    else if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.PfichtProduktgruppe)
+                    {
+                        @if (!FH.Files[FH.selectedFileIndex].WobSelected)
+                        {
+                            <div style="display: flex; justify-content: space-between;">  
+                                <div style="width: 30%;">  
+                                    <label for="optFallnrInput">Opt Fallnr:</label>  
+                                    <input id="optFallnrInput" @bind="optFallnr" />  
+                                </div>  
+                                <div style="width: 30%;">  
+                                    <label for="optFallbuendelnrInput">Opt Fallbündelnr:</label>  
+                                    <input id="optFallbuendelnrInput" @bind="optFallbuendelnr" />  
+                                </div>  
+                                <div style="width: 30%;">  
+                                    <label for="gposGruppr">Produktgruppe:</label>  
+                                    <select id="gposGruppr" @bind="gposgruppe" style="width: 100%; height: 30px;">  
+                                        @foreach (var document in FH.GPOSList)  
+                                        {  
+                                            <option value="@document">@document</option>  
+                                        }  
+                                    </select>  
+                                </div>  
+                            </div>
+                            <button @onclick="OptFallnrFallbuendelnrUebernehmen">Übernehmen</button>
+                        }
+                        else
+                        {
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallnummer))
+                            {
+                                <strong style="color:orange;">Fallnummer ist nicht gesetzt!</strong>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallnummer: @FH.Files[FH.selectedFileIndex].Fallnummer
+                                </p>
+                            }
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallbuendelnummer))
+                            {
+                                <p>
+                                    <strong style="color:orange;">Fallbündelnummer ist nicht gesetzt!</strong>
+                                </p>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallbündelnummer: @FH.Files[FH.selectedFileIndex].Fallbuendelnummer
+                                </p>
+                            }
+                            <p>
+                                Produktgruppe: @FH.Files[FH.selectedFileIndex].Produktgruppe
+                            </p>
+                        }
+                    }
+                    else if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.OptProduktgruppe)
+                    {
+                        @if (!FH.Files[FH.selectedFileIndex].WobSelected)
+                        {
+                            <div style="display: flex; justify-content: space-between;">
+                                <div style="width: 30%;">
+                                    <label for="optFallnrInput">Opt Fallnr:</label>
+                                    <input id="optFallnrInput" @bind="optFallnr" />
+                                </div>
+                                <div style="width: 30%;">
+                                    <label for="optFallbuendelnrInput">Opt Fallbündelnr:</label>
+                                    <input id="optFallbuendelnrInput" @bind="optFallbuendelnr" />
+                                </div>
+                                <div style="width: 30%;">
+                                    <label for="gposGruppr">Produktgruppe:</label>
+                                    <select id="gposGruppr" @bind="gposgruppe" style="width: 100%; height: 30px;">
+                                        @foreach (var document in FH.GPOSList)
+                                        {
+                                            <option value="@document">@document</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <button @onclick="OptFallnrFallbuendelnrUebernehmen">Übernehmen</button>
+                        }
+                        else
+                        {
+
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallnummer))
+                            {
+                                <strong style="color:orange;">Fallnummer ist nicht gesetzt!</strong>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallnummer: @FH.Files[FH.selectedFileIndex].Fallnummer
+                                </p>
+                            }
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallbuendelnummer))
+                            {
+                                <p>
+                                    <strong style="color:orange;">Fallbündelnummer ist nicht gesetzt!</strong>
+                                </p>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallbündelnummer: @FH.Files[FH.selectedFileIndex].Fallbuendelnummer
+                                </p>
+                            }
+                        }
+                    }
+                    else if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.optFallnrFallbuendellNr)
+                    {
+                        @if (!FH.Files[FH.selectedFileIndex].WobSelected)
+                        {
+                            <div style="display: flex; justify-content: space-between;">
+                                <div style="width: 48%;">
+                                    <label for="optFallnrInput">Opt Fallnr:</label>
+                                    <input id="optFallnrInput" @bind="optFallnr" />
+                                </div>
+                                <div style="width: 48%;">
+                                    <label for="optFallbuendelnrInput">Opt Fallbündelnr:</label>
+                                    <input id="optFallbuendelnrInput" @bind="optFallbuendelnr" />
+                                </div>
+                            </div>
+                            <button @onclick="OptFallnrFallbuendelnrUebernehmen">Übernehmen</button>
+                        }                        
+                        else
+                        {
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallnummer))
+                            {
+                                <strong style="color:orange;">Fallnummer ist nicht gesetzt!</strong>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallnummer: @FH.Files[FH.selectedFileIndex].Fallnummer
+                                </p>
+                            }
+                            @if (string.IsNullOrEmpty(FH.Files[FH.selectedFileIndex].Fallbuendelnummer))
+                            {
+                                <p>
+                                    <strong style="color:orange;">Fallbündelnummer ist nicht gesetzt!</strong>
+                                </p>
+                            }
+                            else
+                            {
+                                <p>
+                                    Fallbündelnummer: @FH.Files[FH.selectedFileIndex].Fallbuendelnummer
+                                </p>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <p>
+                            <strong style="color:red;">Weitere Ordnungsbegriffe Ermittlung ist fehlgeschlagen!</strong>
+                        </p>
+                    }
+                }
+            }
+            @if (FH.Files[FH.selectedFileIndex].MailBodyApproved)
+            {
+                @if (FH.Files[FH.selectedFileIndex].MailbodyVerakten == BodyVeraktung.unbestimmt)
+                {
+                    <p>
+                        Mailbody verakten ja/nein
+                        <button @onclick="FinalWeiterJa">Mit Bodyveraktung</button>
+                        <button @onclick="FinalWeiterNein">Ohne Bodyveraktung</button>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        MailbodyVeraktung = @FH.Files[FH.selectedFileIndex].MailbodyVerakten
+                    </p>
+                }
+
+            }
+        }
+    }
+    if (FH.Files.Count != 0 && FH.selectedFileIndex != -1)    
+    {
+        <p>
+            <br />
+            <button @onclick="VorgangReset">Bearbeitung abbrechen</button>
+        </p>
+    }
+}
+
+@code {
+    [Parameter]
+    public FileHandler? FH { get; set; }
+    [Parameter]
+    public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
+
+    private bool isKVNRValid = false;
+    private bool isBTNRValid = false;
+    private bool isGPNRValid = false;
+    private bool isLEIKValid = false;
+
+    private string optFallnr = "";
+    private string optFallbuendelnr = "";
+    private string gposgruppe = "";
+    private bool nolookupfound = true;
+
+    private string name = "";
+    private string vorname = "";
+    private string gebDatum = "";
+    private string adresse = "";
+    private string uebergabe = "";
+
+    private List<string> Categories = new();
+    private List<string> Unterkategorien = new();
+    private List<string> dokumente = new();
+    private List<string> Favorites = new();
+    private string? selectedCategory;
+    private string? selectedunterkategory;
+    private string? dokumentenKlasse;
+    private bool isFavorit = false;
+
+    private bool nutzeFav = false;
+
+    private string GetFavoritIcon()
+    {
+        return isFavorit ? "images/GreenStar.png" : "images/YellowStar.png";
+    }
+
+    private async Task OptFallnrFallbuendelnrUebernehmen()
+    {
+        if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.PfichtProduktgruppe)
+        {
+            if (string.IsNullOrEmpty(gposgruppe))
+            {
+                var result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Achtung!",
+                        Text = "Bitte wählen Sie eine Produktgruppe aus.",
+                        Icon = SweetAlertIcon.Info,
+                        ConfirmButtonText = "OK"
+                    });
+                return;
+            }
+        }
+        FH!.Files[FH.selectedFileIndex].Fallnummer = optFallnr;
+        FH!.Files[FH.selectedFileIndex].Fallbuendelnummer = optFallbuendelnr;
+        FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+        FH!.Files[FH.selectedFileIndex].WobSelected = true;
+        FH!.Files[FH.selectedFileIndex].Produktgruppe = gposgruppe;
+        StateHasChanged();
+    }
+
+    private void Updater()
+    {
+        FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+        StateHasChanged();
+    }
+
+    private async Task SetKanalArt(KanalArt kanalArt)
+    {
+        FH!.Files[FH.selectedFileIndex].KanalArt = kanalArt;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        StateHasChanged();
+    }
+
+    private string GetInputStyle(string value)
+    {
+        return value.Contains("nicht gefunden") ? "border: 10px solid red;" + $"width: {Math.Max(value.Length * 8, 100)}px;" : $"width: {Math.Max(value.Length * 8, 100)}px;";
+    }
+    private void ValidateGPNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isGPNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+
+    }
+    private void ValidateLEIK(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isBTNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+    }
+    private void ValidateBTNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isLEIKValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+    }
+    private void ValidateKVNR(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        isKVNRValid = !string.IsNullOrEmpty(input) && (input.Length == 9 || input.Length == 10);
+    }
+    private void VorgangReset()
+    {
+        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = string.Empty;
+        FH!.Files[FH.selectedFileIndex].Autoermittlung = false;
+        FH!.Files[FH.selectedFileIndex].isSaved = false;
+        FH!.Files[FH.selectedFileIndex].BTNR = string.Empty;
+        FH!.Files[FH.selectedFileIndex].KVNR = string.Empty;
+        FH!.Files[FH.selectedFileIndex].GPNR = string.Empty;
+        FH!.Files[FH.selectedFileIndex].LEIK = string.Empty;
+        FH!.Files[FH.selectedFileIndex].Fallnummer = string.Empty;
+        FH!.Files[FH.selectedFileIndex].Fallbuendelnummer = string.Empty;
+        FH!.Files[FH.selectedFileIndex].Produktgruppe = string.Empty;
+        FH!.Files[FH.selectedFileIndex].WeitereOrdnungsbegriffe = false;
+        FH!.Files[FH.selectedFileIndex].MailBodyApproved = false;
+        FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = false;
+        FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = false;
+        FH!.Files[FH.selectedFileIndex].KanalartApproved = false;
+        FH!.Files[FH.selectedFileIndex].MailbodyVerakten = BodyVeraktung.unbestimmt;
+        FH!.Files[FH.selectedFileIndex].KanalArt = KanalArt.unbestimmt;
+        FH!.Files[FH.selectedFileIndex].Ordnugsbegrff = Ordnungsbegriff.Keiner;
+        FH!.Files[FH.selectedFileIndex].WOB = WeitereOrdnungsbegriffe.unbestimmt;
+        FH!.Files[FH.selectedFileIndex].WeitereOBApproved = false;
+        FH!.Files[FH.selectedFileIndex].WobSelected = false;
+        nutzeFav = false;
+        gposgruppe = "";
+        StateHasChanged();
+    }
+    private async Task KanalArtWeiter()
+    {
+        FH!.Files[FH.selectedFileIndex].KanalArt = KanalArt.Beide;
+        FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+
+    private async Task OBWeiter()
+    {
+        bool res = false;
+        FH!.Files[FH.selectedFileIndex].KVNR = uebergabe;
+        switch (FH!.Files[FH.selectedFileIndex].Ordnugsbegrff)
+        {
+            case Ordnungsbegriff.KVNR:
+                FH.Files[FH.selectedFileIndex].KVNR = uebergabe;
+                if (FH.Files[FH.selectedFileIndex].KVNR.Length == 9)
+                {
+                    res = await KVNRHandler(stammDatenService.GetVersichertenByKVNR9Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    if (!res)
+                    {
+                        var result = await Swal.FireAsync(new SweetAlertOptions
+                            {
+                                Title = "Achtung!",
+                                Text = "Es wurde keine KVNR Nummer gefunden. Bitte anpassen.",
+                                Icon = SweetAlertIcon.Info,
+                                ConfirmButtonText = "OK"
+                            });
+                        FH.Files[FH.selectedFileIndex].KVNR = "";
+                        return;
+                    }
+                }
+                else if (FH.Files[FH.selectedFileIndex].KVNR.Length == 10)
+                {
+                    res = await KVNRHandler(stammDatenService.GetVersichertenByKVNR10Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    if (!res)
+                    {
+                        var result = await Swal.FireAsync(new SweetAlertOptions
+                            {
+                                Title = "Achtung!",
+                                Text = "Es wurde keine KVNR Nummer gefunden. Bitte anpassen.",
+                                Icon = SweetAlertIcon.Info,
+                                ConfirmButtonText = "OK"
+                            });
+                        FH.Files[FH.selectedFileIndex].KVNR = "";
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new Exception("KVNR ist nicht korrekt");
+                }
+                break;
+            case Ordnungsbegriff.BTNR:
+                FH.Files[FH.selectedFileIndex].BTNR = uebergabe;
+                res = await BTNRHandler(stammDatenService.GetVersichertenByBTNRSync(FH.Files[FH.selectedFileIndex].BTNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].BTNR = "";
+                    return;
+                }
+                break;
+            case Ordnungsbegriff.GPNR:
+                FH.Files[FH.selectedFileIndex].GPNR = uebergabe;
+                res = await GPNRHandler(stammDatenService.GetVersichertenByBPNRSync(FH.Files[FH.selectedFileIndex].GPNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].GPNR = "";
+                    return;
+                }
+                break;
+            case Ordnungsbegriff.Leik:
+                FH.Files[FH.selectedFileIndex].LEIK = uebergabe;
+                res = await LeikHandler(stammDatenService.GetVersichertenByLeikSync(FH.Files[FH.selectedFileIndex].BTNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].LEIK = "";
+                    return;
+                }
+                break;
+            case Ordnungsbegriff.Keiner:
+
+                break;
+            default:
+                break;
+
+        }
+        FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+        FH!.Files[FH.selectedFileIndex].WeitereOBApproved = true;
+        if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+        {
+            FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+        }
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+
+    private async Task<bool> BTNRHandler(List<IStammdatenFirmenkunde> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        string Hausnummer = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            nolookupfound = false;
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Firmenname))
+            {
+                name = "Firmenname nicht gefunden";
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                name = "Firma";
+                vorname = stammdatenVersicherte[0].Firmenname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Hausnummer))
+            {
+                Strasse = "HN NF ";
+            }
+            else
+            {
+                Hausnummer = stammdatenVersicherte[0].Hausnummer!;
+            }
+            gebDatum = string.Concat(PLZ, Ort);
+            adresse = string.Concat(Strasse, Hausnummer);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOBApproved = true;
+            if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+            {
+                FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+            }
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+            return true; ;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> GPNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            nolookupfound = false;
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Name))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Name!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Geburtsdatum))
+            {
+                gebDatum = "Geburtsdatum nicht gefunden";
+            }
+            else
+            {
+                gebDatum = stammdatenVersicherte[0].Geburtsdatum!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz! + " ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            adresse = string.Concat(PLZ, Ort, Strasse);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOBApproved = true;
+            if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+            {
+                FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+            }
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+            return true;
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            return false;
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+    private async Task<bool> LeikHandler(List<ILeistungserbringerLanr> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        string Hausnummer = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            nolookupfound = false;
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Nachname))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Nachname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz! + " ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Hausnummer))
+            {
+                Strasse = "HN NF ";
+            }
+            else
+            {
+                Hausnummer = stammdatenVersicherte[0].Hausnummer!;
+            }
+            gebDatum = string.Concat(PLZ, Ort);
+            adresse = string.Concat(Strasse,Hausnummer);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOBApproved = true;
+            if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+            {
+                FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+            }
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+            return true;
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            return false;
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+    private async Task<bool> KVNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    {
+        string PLZ = "";
+        string Ort = "";
+        string Strasse = "";
+        if (stammdatenVersicherte.Count == 1)
+        {
+            nolookupfound = false;
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Name))
+            {
+                name = "Name nicht gefunden";
+            }
+            else
+            {
+                name = stammdatenVersicherte[0].Name!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Vorname))
+            {
+                vorname = "Vorname nicht gefunden";
+            }
+            else
+            {
+                vorname = stammdatenVersicherte[0].Vorname!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Geburtsdatum))
+            {
+                gebDatum = "Geburtsdatum nicht gefunden";
+            }
+            else
+            {
+                gebDatum = stammdatenVersicherte[0].Geburtsdatum!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Plz))
+            {
+                PLZ = "PLZ NF ";
+            }
+            else
+            {
+                PLZ = stammdatenVersicherte[0].Plz + " "!;
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Ort))
+            {
+                Ort = "ORT NF ";
+            }
+            else
+            {
+                Ort = stammdatenVersicherte[0].Ort! + ", ";
+            }
+            if (string.IsNullOrEmpty(stammdatenVersicherte[0].Strasse))
+            {
+                Strasse = "Strasse NF ";
+            }
+            else
+            {
+                Strasse = stammdatenVersicherte[0].Strasse!;
+            }
+            adresse = string.Concat(PLZ, Ort, Strasse);
+            FH!.Files[FH.selectedFileIndex].SuchergebnisAppoved = true;
+            FH!.Files[FH.selectedFileIndex].WeitereOBApproved = true;
+            if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.Keiner)
+            {
+                FH!.Files[FH.selectedFileIndex].MailBodyApproved = true;
+            }
+            await OnFileHandlerChanged.InvokeAsync(FH);
+            StateHasChanged();
+            return true;
+        }
+        else if (stammdatenVersicherte.Count == 0)
+        {
+            return false;
+        }
+        else
+        {
+            throw new Exception("KVNR ist nicht korrekt");
+        }
+    }
+
+    private async Task FinalWeiterJa()
+    {
+        FH!.Files[FH.selectedFileIndex].MailbodyVerakten = BodyVeraktung.Ja;
+        FH!.Files[FH.selectedFileIndex].isSaved = true;
+
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task FinalWeiterNein()
+    {
+        FH!.Files[FH.selectedFileIndex].MailbodyVerakten = BodyVeraktung.Nein;
+        FH!.Files[FH.selectedFileIndex].isSaved = true;
+
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task SetDokumentenKlasse()
+    {
+
+        // //Fallart 4
+        // FH!.Files[FH.selectedFileIndex].DokumentenKlasse = "Widerspruch YLAMI41105";
+        // //Fallart 1
+        // FH!.Files[FH.selectedFileIndex].DokumentenKlasse = "Beitragspflicht Selbständige YLAMI46002";
+        // //Falart 3
+        // FH!.Files[FH.selectedFileIndex].DokumentenKlasse = "Poolverfahren YLAMI02006";
+        // //Falart 2
+        // FH!.Files[FH.selectedFileIndex].DokumentenKlasse = "Anlage YLAMI98005";
+        FH!.Files[FH.selectedFileIndex].DokumentenKlasse = dokumentenKlasse!;
+        FH!.Files[FH.selectedFileIndex].KanalartApproved = true;
+
+        FH!.Files[FH.selectedFileIndex].Cascade = GetCascade(FH!.Files[FH.selectedFileIndex].DokumentenKlasse);
+        FH!.Files[FH.selectedFileIndex].KanalArt = FH!.Files[FH.selectedFileIndex].Cascade!.KanalVorgabe;
+        FH!.Files[FH.selectedFileIndex].Ordnugsbegrff = FH!.Files[FH.selectedFileIndex].Cascade!.OBVorgabe;
+        FH!.Files[FH.selectedFileIndex].WOB = FH!.Files[FH.selectedFileIndex].Cascade!.WOBVorgabe;
+        if (FH!.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)
+        {
+            FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        }
+        if (FH!.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)
+        {
+            FH!.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved = true;
+        }
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private Cascade GetCascade(string dokumentenKlasse)
+    {
+        try
+        {
+            IDokumentenProcessor? dp = FH!.DokumentenListe.Find(x => x.Dokumentklasse == dokumentenKlasse);
+            Cascade cascade = new Cascade(dp!.Kanalart, dp.Ob, dp.OtherOb, dp.Mailbody);
+            return cascade;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Dokumentenklasse {dokumentenKlasse} nicht gefunden {ex.Message}");
+        }
+
+    }
+    private void FavoritenHinzufuegen()
+    {
+        isFavorit = !isFavorit;
+
+        StateHasChanged();
+    }
+    private void OnCategoryChange(ChangeEventArgs e)
+    {
+        if (FH!.Files[FH.selectedFileIndex] != null)
+        {
+            if (FH!.Files[FH.selectedFileIndex] != null)
+            {
+                selectedCategory = e.Value?.ToString();
+                if (!string.IsNullOrEmpty(selectedCategory))
+                {
+                    try
+                    {
+                        Unterkategorien = docService.GettAllSubKategoriesByKategorySync(selectedCategory);
+                        OnSubCategoryChange(new ChangeEventArgs { Value = Unterkategorien[0] });
+                        StateHasChanged();
+                    }
+                    catch (Exception ex)
+                    {
+                        eh.Systemmessage = ex.Message;
+                        eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                        navigationManager.NavigateTo($"/ErrorPage");
+                    }
+                }
+            }
+        }
+    }
+    private void OnSubCategoryChange(ChangeEventArgs e)
+    {
+        if (FH!.Files[FH.selectedFileIndex] != null)
+        {
+            if (FH!.Files[FH.selectedFileIndex] != null)
+            {
+                selectedunterkategory = e.Value?.ToString();
+                if (!string.IsNullOrEmpty(selectedunterkategory))
+                {
+                    try
+                    {
+                        dokumente = docService.GettAllDocumentsBySubkategorySync(selectedunterkategory!, selectedCategory!);
+                        //FH!.Files[FH.selectedFileIndex].DokumentenKlasse = dokumentenKlasse!;
+                        StateHasChanged();
+                    }
+                    catch (Exception ex)
+                    {
+                        eh.Systemmessage = ex.Message;
+                        eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                        navigationManager.NavigateTo($"/ErrorPage");
+                    }
+                }
+            }
+        }
+    }
+    protected async override Task OnParametersSetAsync()
+    {
+        nutzeFav = false;
+        if (FH!.selectedFileIndex != -1)
+        {
+            if (FH!.Files[FH.selectedFileIndex] != null)
+            {
+                try
+                {
+                    Favorites = await docService.GettAllFavoritesByUser(FH.UserID);
+                    Categories = await docService.GettAllKategories();
+                    selectedCategory = Categories.First();
+                    OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });
+                }
+                catch (Exception ex)
+                {
+                    eh.Systemmessage = ex.Message;
+                    eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
+                    navigationManager.NavigateTo($"/ErrorPage");
+                }
+            }
+        }
+        base.OnParametersSet();
+        try
+        {
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error while setting parameters: {ex.Message}");
+        }
+    }
+
+    private void SwitchToFav()
+    {
+        nutzeFav = true;
+        StateHasChanged();
+    }
+    private async Task ManuelleUebernahme()
+    {
+        if (FH!.Files[FH.selectedFileIndex].Autoermittlung)
+        {
+            FH!.Files[FH.selectedFileIndex].isSaved = false;
+            FH!.Files[FH.selectedFileIndex].Autoermittlung = false;
+        }
+        else
+        {
+            FH!.Files[FH.selectedFileIndex].isSaved = true;
+            FH!.Files[FH.selectedFileIndex].Autoermittlung = true;
+        }
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+    private async Task AutomatischeUebernahme()
+    {
+        FH!.Files[FH.selectedFileIndex].Autoermittlung = true;
+        FH!.Files[FH.selectedFileIndex].isSaved = true;
+        await OnFileHandlerChanged.InvokeAsync(FH);
+        StateHasChanged();
+    }
+}

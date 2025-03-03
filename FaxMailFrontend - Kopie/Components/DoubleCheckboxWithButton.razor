@@ -1,0 +1,53 @@
+﻿@page "/double-checkbox-with-button"  
+@inject NavigationManager navigationManager  
+@namespace FaxMailFrontend.Components
+
+<div style="background-color:@BackgroundColor; color:@TextColor; border: 20px solid @BackgroundColor;">  
+  <p><h2>@Header</h2></p>  
+  <p style="display: flex; align-items: center;">
+    <input type="checkbox" @bind="isFirstChecked" style="margin-right: 20px;" />
+        <textarea readonly cols=@KommentarlaengeInZeichen rows="@GetRowCount(Text1)">@Text1</textarea>
+  </p>  
+  <p style="display: flex; align-items: center;">  
+   <input type="checkbox" @bind="isSecondChecked" style="margin-right: 20px;" />
+        <textarea readonly cols=@KommentarlaengeInZeichen rows="@GetRowCount(Text2)">@Text2</textarea>
+    </p>
+  <p><button @onclick="OnButtonClick" disabled="@(isButtonDisabled)">OK</button></p>  
+</div>  
+
+@code {  
+      [Parameter]
+      public string Header { get; set; } = "Überschrift";  
+      [Parameter]
+      public string Text1 { get; set; } = "Option 1";  
+      [Parameter]
+      public string Text2 { get; set; } = "Option 2";  
+      [Parameter]
+      public string BackgroundColor { get; set; } = "white";  
+      [Parameter]
+      public string TextColor { get; set; } = "black";
+  
+      [Parameter]
+      public bool isFirstChecked { get; set; } = false;
+      [Parameter]
+      public bool isSecondChecked { get; set; } = false;
+      [Parameter]
+      public int KommentarlaengeInZeichen { get; set; } = 80;
+
+      private bool isButtonDisabled => !(isFirstChecked && isSecondChecked);
+
+      protected override void OnInitialized()
+      { 
+      }
+
+      private void OnButtonClick()  
+      {  
+          navigationManager.NavigateTo("/EmailSinglePage");  
+      }  
+
+      private int GetRowCount(string text)
+      {
+          int charsPerRow = 80; // Assuming 80 characters per row
+          return (text.Length / charsPerRow) + 1;
+      }
+}

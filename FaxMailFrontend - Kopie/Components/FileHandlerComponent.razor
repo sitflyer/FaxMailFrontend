@@ -1,0 +1,119 @@
+﻿@inject NavigationManager navigationManager
+@inject ErrorHandler eh
+@inject SweetAlertService Swal
+
+@using FaxMailFrontend.Data
+@namespace FaxMailFrontend.Components
+
+<h3 style="border: 5px solid black;">Dateien</h3>
+
+@if (fileHandler?.Files != null)
+{
+    @if (fileHandler.Files.Count == 0)
+    {
+        <tr style="border: 2px solid black;">
+            <td colspan="4">Keine Dateien vorhanden</td>
+        </tr>
+    }
+    else
+    {
+        <table tr style="border: 10px solid black;">
+            <thead>
+                <tr style="border: 2px solid black;">
+                    <th>Filename</th>
+                    @* <th>Save</th> *@
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in fileHandler.Files)
+                {
+                    <tr style="border: 2px solid black;">
+                        <td @onclick="() => EditFile(file.FileName, file)" style="cursor: pointer;">@file.FileName</td>
+                        <td>
+                            <button @onclick="() => EditFile(file.FileName, file)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                <img src="@(file.isSaved ? "images/saved.png" : "images/datei.png")" alt="Edit" style="width: 30px; height: 30px;" />
+                            </button>
+                        </td>
+                        <td>
+                            <button @onclick="() => DeleteFile(file.FileName,file)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                <img src="images/delete.svg" alt="Delete" style="width: 30px; height: 30px;" />
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter]
+    public FileHandler? fileHandler { get; set; }
+    [Parameter]
+    public EventCallback<FileHandler> OnFileHandlerChanged { get; set; }
+    [Parameter]
+    public EventCallback<FileInformation> OnPathChanged { get; set; }    
+
+    private string? Dateiname { get; set; }
+
+    private async Task EditFile(string filename, FileInformation file)
+    {
+        if (fileHandler is not null)
+        {
+            await OnPathChanged.InvokeAsync(file);
+            fileHandler.selectedFileIndex = file.ID;
+            await OnFileHandlerChanged.InvokeAsync(fileHandler);
+            file.isEdit = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteFile(string filename, FileInformation file)
+    {
+        if (fileHandler is not null)
+        {
+            var result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bist du sicher?",
+                    Text = $"Möchtest du die Datei {filename} wirklich löschen?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Ja, löschen",
+                    CancelButtonText = "Abbrechen"
+                });
+
+            if (result.IsConfirmed)
+            {
+                if (fileHandler.Files.Count == 1)
+                {
+                    if (fileHandler.DeleteFile(filename))
+                    {
+                        fileHandler.Files.Clear();
+                        await OnPathChanged.InvokeAsync(null);
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                        eh.EC = ErrorCode.KeineDateiGeloescht;
+                        navigationManager.NavigateTo($"/ErrorPage");
+                    }
+                }
+                
+                if (fileHandler.DeleteFile(filename))
+                {
+                    await OnPathChanged.InvokeAsync(null);
+                    StateHasChanged();
+                }
+                else
+                {
+                    eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                    eh.EC = ErrorCode.KeineDateiGeloescht;
+                    navigationManager.NavigateTo($"/ErrorPage");
+                }
+            }
+        }
+    }
+}

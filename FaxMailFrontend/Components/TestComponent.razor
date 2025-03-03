@@ -10,6 +10,8 @@
 @inject ErrorHandler eh
 @inject SweetAlertService Swal
 @inject ILogger<TestComponent> logger
+@inject IFavoritenService favoritenService
+@inject INutzer nutzer
 
 @if (FH != null)
 {
@@ -1068,8 +1070,47 @@
         }
 
     }
-    private void FavoritenHinzufuegen()
+    private async Task FavoritenHinzufuegen()
     {
+        if (dokumentenKlasse != null)
+        {
+
+            List<string> fav = await docService.GettAllFavoritesByUser(nutzer.Id);
+            if (!fav.Contains(dokumentenKlasse))
+            {
+                await docService.AddFavorite(nutzer.Id, dokumentenKlasse);
+                Favorites = await docService.GettAllFavoritesByUser(nutzer.Id);
+                var result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Achtung!",
+                        Text = $"Dokumentenklasse {dokumentenKlasse} zu Favoriten hinzugefügt",
+                        Icon = SweetAlertIcon.Info,
+                        ConfirmButtonText = "OK"
+                    });
+            }
+            else
+            {
+                await docService.DropFavorite(nutzer.Id, dokumentenKlasse);
+                Favorites = await docService.GettAllFavoritesByUser(nutzer.Id);
+                var result = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Achtung!",
+                        Text = $"Dokumentenklasse {dokumentenKlasse} aus den Favoriten entfernt.",
+                        Icon = SweetAlertIcon.Info,
+                        ConfirmButtonText = "OK"
+                    });
+            }
+        }
+        else
+        {
+            var result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Achtung!",
+                    Text = "Bitte wählen Sie eine Dokumentenklasse aus.",
+                    Icon = SweetAlertIcon.Info,
+                    ConfirmButtonText = "OK"
+                });
+        }
         isFavorit = !isFavorit;
 
         StateHasChanged();
@@ -1133,7 +1174,7 @@
             {
                 try
                 {
-                    Favorites = await docService.GettAllFavoritesByUser(FH.UserID);
+                    Favorites = await docService.GettAllFavoritesByUser(1/* FH.UserID */);
                     Categories = await docService.GettAllKategories();
                     selectedCategory = Categories.First();
                     OnCategoryChange(new ChangeEventArgs { Value = Categories[0] });

@@ -1,4 +1,5 @@
-﻿@using FaxMailFrontend.ViewModel
+﻿@using DataAccessDLL.Interfaces
+@using FaxMailFrontend.ViewModel
 @using FaxMailFrontend.Shared
 @using FaxMailFrontend.Data
 @using System.Text.Json
@@ -12,7 +13,7 @@
 @inject IConfiguration Configuration
 @inject ILogger<EmailSinglePage> logger
 @inject IHttpContextAccessor httpContextAccessor
-
+@inject INutzer nutzer
 
 @inject SweetAlertService Swal
 
@@ -51,61 +52,52 @@
     }
 </style>
 
-@if (loggedOut)
+
+@if (!@success)
 {
-    <p>
-        Logged out
-    </p>
+    <table class="center-table">
+        <tr>
+            <td><h1>FeSiweb</h1></td>
+            <td style="text-align: center;">
+                <div @ref="@dropZoneElement" class="drop-zone">
+                    <h2>Drop your files here</h2>
+                    <div @ref="@inputFileContainer">
+                        <InputFile OnChange="@OnChange" multiple />
+                    </div>
+                </div>
+            </td>
+            <td><img src="images/freihafen_logo.png" /></td>
+        </tr>
+        <tr>
+            <td><FileHandlerComponent fileHandler="@fileHandler" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
+                <td style="width: 800px; height: 600px;">
+                @* <CentralComponent File="@selectedFile" OnFileUpdated="HandleFileUpdate"></CentralComponent>  *@
+                <TestComponent FH="fileHandler" OnFileHandlerChanged="HandleTestFilehandler"></TestComponent>
+                </td>
+            <td >
+                <ViewComponent GivenFile="@selectedFile" BasePath="@basePath" UUID="@fileHandler.UUID"></ViewComponent>
+            </td>
+        </tr>
+        <tr>
+            <td><button @onclick="Absenden" disabled="@absendenVerboten">Absenden</button></td>
+            <td></td>
+            <td><button @onclick="ResetPage">Gesamten Vorgang abbrechen</button></td>
+        </tr>
+    </table>
 }
 else
 {
-    @if (!@success)
-    {
-        <table class="center-table">
-            <tr>
-                <td><h1>FeSiweb</h1></td>
-                <td style="text-align: center;">
-                    <div @ref="@dropZoneElement" class="drop-zone">
-                        <h2>Drop your files here</h2>
-                        <div @ref="@inputFileContainer">
-                            <InputFile OnChange="@OnChange" multiple />
-                        </div>
-                    </div>
-                </td>
-                <td><img src="images/freihafen_logo.png" /></td>
-            </tr>
-            <tr>
-                <td><FileHandlerComponent fileHandler="@fileHandler" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
-                    <td style="width: 800px; height: 600px;">
-                    @* <CentralComponent File="@selectedFile" OnFileUpdated="HandleFileUpdate"></CentralComponent>  *@
-                    <TestComponent FH="fileHandler" OnFileHandlerChanged="HandleTestFilehandler"></TestComponent>
-                    </td>
-                <td >
-                    <ViewComponent GivenFile="@selectedFile" BasePath="@basePath" UUID="@fileHandler.UUID"></ViewComponent>
-                </td>
-            </tr>
-            <tr>
-                <td><button @onclick="Absenden" disabled="@absendenVerboten">Absenden</button></td>
-                <td></td>
-                <td><button @onclick="ResetPage">Gesamten Vorgang abbrechen</button></td>
-            </tr>
-        </table>
-    }
-    else
-    {
-        <div style="text-align: center; border: 5px solid black; margin: auto; width: fit-content; color: black;">
-            <p><ApprovedComponent /></p>
-            <p><PersonalInfoComponent Username="@username" Telefonnummer="@telefonnummer" Mail="@mail"/></p>
-            <p><DateiListeComponent fileHandler="@fileHandler" /></p>
-            <div>
-                <div style="margin: 10px; display: flex; justify-content: space-between;">
-                    <button @onclick="Logout">Logout</button>
-@*                     <a href="MicrosoftIdentity/Account/SignOut"/> *@
-                    <button @onclick="Refresh">Neustart</button>
-                </div>
+    <div style="text-align: center; border: 5px solid black; margin: auto; width: fit-content; color: black;">
+        <p><ApprovedComponent /></p>
+        <p><PersonalInfoComponent Username="@username" Telefonnummer="@telefonnummer" Mail="@mail"/></p>
+        <p><DateiListeComponent fileHandler="@fileHandler" /></p>
+        <div>
+            <div style="margin: 10px; display: flex; justify-content: space-between;">
+                <button @onclick="Logout">Logout</button>
+                <button @onclick="Refresh">Neustart</button>
             </div>
         </div>
-    }    
+    </div>
 }
 
 

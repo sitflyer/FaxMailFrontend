@@ -38,21 +38,19 @@ namespace FaxMailFrontend
 				loggingBuilder.AddNLogWeb();
 			});
 			builder.Services.AddSweetAlert2();
-			builder.Services.AddScoped<IUserService, UserService>();
-			builder.Services.AddScoped<LoginService>();
+			builder.Services.AddScoped<INutzer,Nutzer>();
+//			builder.Services.AddScoped<IUserService, UserService>();
 			builder.Services.AddScoped<IDokuService, DokuService>();
 			builder.Services.AddScoped<IStammDatenService, StammDatenService>();
+			builder.Services.AddScoped<IFavoritenService, FavoritenService>();
 
 			builder.Services.AddScoped<FileHandler>(provider =>
 			{
-				var userService = provider.GetRequiredService<IUserService>();
+				//var userService = provider.GetRequiredService<IUserService>();
 				return new FileHandler(
 					provider.GetRequiredService<IDokuService>(),
 					provider.GetRequiredService<IStammDatenService>(),
-					userService.GetUserAsync().Result.Vorname,
-					userService.GetUserAsync().Result.Nachname,
-					userService.GetUserAsync().Result.Telefon,
-					userService.GetUserAsync().Result.Email
+					provider.GetRequiredService<INutzer>()
 				);
 			});
 			builder.Services.AddScoped<ErrorHandler>(provider => new ErrorHandler(ErrorCode.KeinFehler, ""));

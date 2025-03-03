@@ -1,0 +1,90 @@
+﻿@using FaxMailFrontend.Data
+
+@page "/ErrorPage"
+@inject NavigationManager navigationManager
+@inject ErrorHandler eh
+@inject IHttpContextAccessor httpContextAccessor
+
+<style>
+    body {
+    background-color: #005E3F;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    }
+
+    .error-container {
+    background-color: #18AB42;
+    border: 2px solid black;
+    padding: 20px;
+    text-align: center;
+    }
+
+    .error-text {
+    color: red;
+    }
+
+    .button-container {
+    margin-top: 20px;
+    text-align: center;
+    }
+
+    .navigate-button {
+    background-color: black;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    }
+</style>
+
+<div class="error-container">
+    <h2 class="error-text">Fehlerbenachrichtigung:</h2>
+    <p class="error-text">Es ist ein Fehler aufgetreten. Bitte benachrichtigen Sie den Support unter den bekannten Nummern.</p>
+    @switch (eh.EC)
+    {
+        case ErrorCode.AllgemeinerFehler:
+            <p class="error-text">Es ist ein allgemeiner Fehler aufgetreten</p>
+            break;
+        case ErrorCode.DBFehler:
+            <p class="error-text">Es ist ein Datenbankfehler aufgetreten</p>
+            break;
+        case ErrorCode.DatenKonntenNichtKopiertWerden:
+            <p class="error-text">Es ist ein Filesystemproblem aufgetreten</p>
+            break;
+        case ErrorCode.KeineDateiGefunden:
+            <p class="error-text">Es wurde keine Datei gefunden</p>
+            break;
+        case ErrorCode.KeineDateiGeloescht:
+            <p class="error-text">Es wurde keine Datei gelöscht</p>
+            break;
+        case ErrorCode.KeineDateiHochgeladen:
+            <p class="error-text">Es wurde keine Datei hochgeladen</p>
+            break;
+        case ErrorCode.ConfigFehler:
+            <p class="error-text">Es ist ein Konfigurationsfehler aufgetreten</p>
+            break;
+        case ErrorCode.VerzeichnisKonnteNichtAngelegtWerden:
+            <p class="error-text">Das Ablageverzeichnis konnte nicht angelegt werden.</p>
+            break;
+        default:
+            <p class="error-text">Es ist ein unbekannter Fehler aufgetreten</p>
+            break;
+    }
+    <p class="error-text">Systemmeldung => @eh.Systemmessage</p>
+    <div class="button-container">
+        <button class="navigate-button" @onclick="NavigateToEmailSinglePage">Zurück zur Email-Seite</button>
+    </div>
+</div>
+
+@code {
+
+    private void NavigateToEmailSinglePage()
+    {
+        eh.EC = ErrorCode.KeinFehler;
+        eh.Systemmessage = "";
+        navigationManager.NavigateTo("/EmailSinglePage");
+    }
+}

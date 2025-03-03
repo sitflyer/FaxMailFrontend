@@ -1,7 +1,12 @@
 ﻿@page "/"
-@inject IUserService userService
+@* @inject IUserService userService *@
+@using DataAccessDLL.Interfaces
+@using DataAccessDLL.Services
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject IHttpContextAccessor httpContextAccessor
+@inject INutzer nutzer
+@inject IFavoritenService favoritenService
 
 <PageTitle>FeSiweb</PageTitle>
 
@@ -23,17 +28,12 @@
 </style>
 
 <p>
-    @if (httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
-    {
-    <p><h1>Willkommen bei FeSiweb @httpContextAccessor.HttpContext.User.Identity.Name</h1></p>
+    <p>
+        <h1>Willkommen bei FeSiweb @nutzer.Kennung</h1>
+    </p>
     <div class="component-border">
         <DoubleCheckboxWithButton Header=@Header Text1=@Text1 Text2=@Text2 TextColor="#FFFFFF" BackgroundColor="#18AB42" isFirstChecked="true" isSecondChecked="true" />
     </div>
-    }
-    else
-    {
-        <p>Willkommen Gast</p>
-    }
 </p>
 
 
@@ -49,6 +49,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var user = await userService.GetUserAsync();
+        nutzer.Kennung = httpContextAccessor.HttpContext!.User.Identity!.Name;
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value is null)
+        {
+            nutzer.Email = "keine EMail zugewiesen!";
+        }
+        else
+        {
+            nutzer.Email = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value;
+        }
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value is null)
+        {
+            nutzer.Vorname = "kein Vorname zugewiesen!";
+        }
+        else
+        {
+            nutzer.Vorname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value;
+        }
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value is null)
+        {
+            nutzer.Nachname = "kein Nachname zugewiesen!";
+        }
+        else
+        {
+            nutzer.Nachname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value;
+        }
+        
+        nutzer.Telefonnummer = "keine Telefonnummer zugewiesen!";
+        
+        bool nutzerExists = await favoritenService.IsNutzerExisting(nutzer.Kennung!);
+        if (nutzerExists)
+        {
+            nutzer.Id = await favoritenService.GetUserIDFromKennung(nutzer.Kennung!);
+        }
+        else
+        {
+            nutzer.Id = await favoritenService.CreateNutzerByKennungAndReturnNewID(nutzer);
+        }
     }
 }

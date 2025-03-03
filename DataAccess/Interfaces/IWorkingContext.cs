@@ -8,5 +8,6 @@ namespace DataAccessDLL.Interfaces
 		DbSet<DokumentenProcessor> DokumentenProcessors { get; set; }
 		DbSet<Favoriten> Favoritens { get; set; }
 		DbSet<Nutzer> Nutzers { get; set; }
+		Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 	}
 }
