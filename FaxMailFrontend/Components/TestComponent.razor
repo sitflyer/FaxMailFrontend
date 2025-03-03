@@ -500,7 +500,7 @@
 
     private async Task OptFallnrFallbuendelnrUebernehmen()
     {
-        if (FH.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.PfichtProduktgruppe)
+        if (FH!.Files[FH.selectedFileIndex].WOB == WeitereOrdnungsbegriffe.PfichtProduktgruppe)
         {
             if (string.IsNullOrEmpty(gposgruppe))
             {
@@ -598,6 +598,7 @@
 
     private async Task OBWeiter()
     {
+        bool res = false;
         FH!.Files[FH.selectedFileIndex].KVNR = uebergabe;
         switch (FH!.Files[FH.selectedFileIndex].Ordnugsbegrff)
         {
@@ -605,11 +606,35 @@
                 FH.Files[FH.selectedFileIndex].KVNR = uebergabe;
                 if (FH.Files[FH.selectedFileIndex].KVNR.Length == 9)
                 {
-                    await KVNRHandler(stammDatenService.GetVersichertenByKVNR9Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    res = await KVNRHandler(stammDatenService.GetVersichertenByKVNR9Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    if (!res)
+                    {
+                        var result = await Swal.FireAsync(new SweetAlertOptions
+                            {
+                                Title = "Achtung!",
+                                Text = "Es wurde keine KVNR Nummer gefunden. Bitte anpassen.",
+                                Icon = SweetAlertIcon.Info,
+                                ConfirmButtonText = "OK"
+                            });
+                        FH.Files[FH.selectedFileIndex].KVNR = "";
+                        return;
+                    }
                 }
                 else if (FH.Files[FH.selectedFileIndex].KVNR.Length == 10)
                 {
-                    await KVNRHandler(stammDatenService.GetVersichertenByKVNR10Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    res = await KVNRHandler(stammDatenService.GetVersichertenByKVNR10Sync(FH.Files[FH.selectedFileIndex].KVNR));
+                    if (!res)
+                    {
+                        var result = await Swal.FireAsync(new SweetAlertOptions
+                            {
+                                Title = "Achtung!",
+                                Text = "Es wurde keine KVNR Nummer gefunden. Bitte anpassen.",
+                                Icon = SweetAlertIcon.Info,
+                                ConfirmButtonText = "OK"
+                            });
+                        FH.Files[FH.selectedFileIndex].KVNR = "";
+                        return;
+                    }
                 }
                 else
                 {
@@ -618,15 +643,51 @@
                 break;
             case Ordnungsbegriff.BTNR:
                 FH.Files[FH.selectedFileIndex].BTNR = uebergabe;
-                await BTNRHandler(stammDatenService.GetVersichertenByBTNRSync(FH.Files[FH.selectedFileIndex].BTNR));
+                res = await BTNRHandler(stammDatenService.GetVersichertenByBTNRSync(FH.Files[FH.selectedFileIndex].BTNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].BTNR = "";
+                    return;
+                }
                 break;
             case Ordnungsbegriff.GPNR:
                 FH.Files[FH.selectedFileIndex].GPNR = uebergabe;
-                await GPNRHandler(stammDatenService.GetVersichertenByBPNRSync(FH.Files[FH.selectedFileIndex].GPNR));
+                res = await GPNRHandler(stammDatenService.GetVersichertenByBPNRSync(FH.Files[FH.selectedFileIndex].GPNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].GPNR = "";
+                    return;
+                }
                 break;
             case Ordnungsbegriff.Leik:
                 FH.Files[FH.selectedFileIndex].LEIK = uebergabe;
-                await LeikHandler(stammDatenService.GetVersichertenByLeikSync(FH.Files[FH.selectedFileIndex].BTNR));
+                res = await LeikHandler(stammDatenService.GetVersichertenByLeikSync(FH.Files[FH.selectedFileIndex].BTNR));
+                if (!res)
+                {
+                    var result = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Achtung!",
+                            Text = "Es wurde keine BTNR Nummer gefunden. Bitte anpassen.",
+                            Icon = SweetAlertIcon.Info,
+                            ConfirmButtonText = "OK"
+                        });
+                    FH.Files[FH.selectedFileIndex].LEIK = "";
+                    return;
+                }
                 break;
             case Ordnungsbegriff.Keiner:
 
@@ -645,7 +706,7 @@
         StateHasChanged();
     }
 
-    private async Task BTNRHandler(List<IStammdatenFirmenkunde> stammdatenVersicherte)
+    private async Task<bool> BTNRHandler(List<IStammdatenFirmenkunde> stammdatenVersicherte)
     {
         string PLZ = "";
         string Ort = "";
@@ -706,10 +767,15 @@
             }
             await OnFileHandlerChanged.InvokeAsync(FH);
             StateHasChanged();
+            return true; ;
+        }
+        else
+        {
+            return false;
         }
     }
 
-    private async Task GPNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    private async Task<bool> GPNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
     {
         string PLZ = "";
         string Ort = "";
@@ -774,13 +840,11 @@
             }
             await OnFileHandlerChanged.InvokeAsync(FH);
             StateHasChanged();
+            return true;
         }
         else if (stammdatenVersicherte.Count == 0)
         {
-            name = "Name nicht gefunden";
-            vorname = "Vorname nicht gefunden";
-            gebDatum = "Geburtsdatum nicht gefunden";
-            adresse = "Adresse nicht gefunden";
+            return false;
         }
         else
         {
@@ -788,7 +852,7 @@
         }
     }
 
-    private async Task LeikHandler(List<ILeistungserbringerLanr> stammdatenVersicherte)
+    private async Task<bool> LeikHandler(List<ILeistungserbringerLanr> stammdatenVersicherte)
     {
         string PLZ = "";
         string Ort = "";
@@ -856,13 +920,11 @@
             }
             await OnFileHandlerChanged.InvokeAsync(FH);
             StateHasChanged();
+            return true;
         }
         else if (stammdatenVersicherte.Count == 0)
         {
-            name = "Name nicht gefunden";
-            vorname = "Vorname nicht gefunden";
-            gebDatum = "Geburtsdatum nicht gefunden";
-            adresse = "Adresse nicht gefunden";
+            return false;
         }
         else
         {
@@ -870,7 +932,7 @@
         }
     }
 
-    private async Task KVNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
+    private async Task<bool> KVNRHandler(List<IStammdatenVersicherte> stammdatenVersicherte)
     {
         string PLZ = "";
         string Ort = "";
@@ -935,13 +997,11 @@
             }
             await OnFileHandlerChanged.InvokeAsync(FH);
             StateHasChanged();
+            return true;
         }
         else if (stammdatenVersicherte.Count == 0)
         {
-            name = "Name nicht gefunden";
-            vorname = "Vorname nicht gefunden";
-            gebDatum = "Geburtsdatum nicht gefunden";
-            adresse = "Adresse nicht gefunden";
+            return false;
         }
         else
         {

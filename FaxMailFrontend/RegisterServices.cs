@@ -4,7 +4,9 @@ using DataAccessDLL.Modell;
 using DataAccessDLL.Services;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
 using NLog.Web;
 
 
@@ -15,16 +17,17 @@ namespace FaxMailFrontend
 		public static void ConfigureServices(this WebApplicationBuilder builder)
 		{
 			// Add services to the container.
-			//builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-			//    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
-			//builder.Services.AddControllersWithViews()
-			//    .AddMicrosoftIdentityUI();
+			builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+				.AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("EntraID"));
+			builder.Services.AddControllersWithViews()
+				.AddMicrosoftIdentityUI();
 
-			//builder.Services.AddAuthorization(options =>
-			//{
-			//    // By default, all incoming requests will be authorized according to the default policy
-			//    options.FallbackPolicy = options.DefaultPolicy;
-			//});
+			builder.Services.AddAuthorization(options =>
+			{
+				// By default, all incoming requests will be authorized according to the default policy
+				options.FallbackPolicy = options.DefaultPolicy;
+			});
+			
 			builder.Services.AddRazorPages();
 			builder.Services.AddServerSideBlazor()
 				.AddMicrosoftIdentityConsentHandler();
@@ -36,6 +39,7 @@ namespace FaxMailFrontend
 			});
 			builder.Services.AddSweetAlert2();
 			builder.Services.AddScoped<IUserService, UserService>();
+			builder.Services.AddScoped<LoginService>();
 			builder.Services.AddScoped<IDokuService, DokuService>();
 			builder.Services.AddScoped<IStammDatenService, StammDatenService>();
 
@@ -45,10 +49,10 @@ namespace FaxMailFrontend
 				return new FileHandler(
 					provider.GetRequiredService<IDokuService>(),
 					provider.GetRequiredService<IStammDatenService>(),
-					userService.Vorname,
-					userService.Nachname,
-					userService.Telefon,
-					userService.Email
+					userService.GetUserAsync().Result.Vorname,
+					userService.GetUserAsync().Result.Nachname,
+					userService.GetUserAsync().Result.Telefon,
+					userService.GetUserAsync().Result.Email
 				);
 			});
 			builder.Services.AddScoped<ErrorHandler>(provider => new ErrorHandler(ErrorCode.KeinFehler, ""));

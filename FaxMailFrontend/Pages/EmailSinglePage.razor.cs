@@ -2,10 +2,14 @@ using CurrieTechnologies.Razor.SweetAlert2;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
 using MailDLL;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.JSInterop;
+
 using XMLBox;
 
 namespace FaxMailFrontend.Pages
@@ -33,8 +37,10 @@ namespace FaxMailFrontend.Pages
 		private int uploadcounter = 0;
 		private IBrowserFile filemerker;
 		private bool protector = false;
+		private bool loggedOut = false;
 		protected override async Task OnInitializedAsync()
 		{
+
 			basePath = env.WebRootPath + "\\Files";
 			MaxFileSize = GetMaxMB() * 1024 * 1024;
 			MaxFilesPerStack = GetMaxFilesPerStack();
@@ -76,10 +82,9 @@ namespace FaxMailFrontend.Pages
 			}
 		}
 
-		private void Logout()
+		private async Task Logout()
 		{
-			protector = true;
-			navigationManager.NavigateTo("/LogOutPage");
+			await JSRuntime.InvokeVoidAsync("navigateToExternalUrl", "MicrosoftIdentity/Account/SignOut");
 		}
 		public int GetMaxMB()
 		{
@@ -97,7 +102,6 @@ namespace FaxMailFrontend.Pages
 				{
 					_module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/dropZone.js");
 					_dropzoneInstance = await _module.InvokeAsync<IJSObjectReference>("initializeFileDropZone", dropZoneElement, inputFileContainer);
-					//logger.LogError("Dropzone initialized");
 				}
 				catch (Exception ex)
 				{
@@ -291,25 +295,25 @@ namespace FaxMailFrontend.Pages
 				navigationManager.NavigateTo($"/ErrorPage");
 			}
 		}
-		private void HandleFileHandlerChanged(FileHandler updatedFileHandler)
-		{
-			fileHandler = updatedFileHandler;
-			//if (fileHandler.Files.Count == 0)
-			selectedFile = null;
-			CheckIfAbsendenErlaubt();
-			StateHasChanged();
-		}
+		//private void HandleFileHandlerChanged(FileHandler updatedFileHandler)
+		//{
+		//	fileHandler = updatedFileHandler;
+		//	//if (fileHandler.Files.Count == 0)
+		//	selectedFile = null;
+		//	CheckIfAbsendenErlaubt();
+		//	StateHasChanged();
+		//}
 		private void HandleTestFilehandler(FileHandler updatedFileHandler)
 		{
 			fileHandler = updatedFileHandler;
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
-		private void HandleFileUpdate(FileInformation file)
-		{
-			selectedFile = file;
-			StateHasChanged();
-		}
+		//private void HandleFileUpdate(FileInformation file)
+		//{
+		//	selectedFile = file;
+		//	StateHasChanged();
+		//}
 
 		private void HandlePathNameChanged(FileInformation file)
 		{
@@ -376,10 +380,11 @@ namespace FaxMailFrontend.Pages
 					string sicherheit = Path.Combine(fileHandler.Targetfolder, fileHandler.Protokollfolder, zielfilename);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), ziel);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), sicherheit);
-					CreateXMLFile(ziel, file);
+					await CreateXMLFile(ziel, file);
 
 					counter++;
 				}
+				await DeleteWorkFolder();
 			}
 			catch (Exception ex)
 			{
@@ -434,10 +439,6 @@ namespace FaxMailFrontend.Pages
 			{
 				DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_BOID", file.Fallbuendelnummer));
 			}
-			if (string.IsNullOrEmpty(file.Produktgruppe))
-			{
-				DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_BOID", file.Produktgruppe));
-			}
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_Filename", file.FileName));
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_Fsname", Path.GetFileName(ziel)));
 			FileInfo fileInfo = new FileInfo(ziel);
@@ -449,7 +450,6 @@ namespace FaxMailFrontend.Pages
 			{
 				textDokument.DokumentSchreiben(true);
 				File.Copy(outputpath, protokollpath);
-				await DeleteWorkFolder();
 			}
 			catch (Exception ex)
 			{

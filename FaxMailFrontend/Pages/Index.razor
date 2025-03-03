@@ -1,41 +1,8 @@
-﻿@page "/"
-@using Microsoft.AspNetCore.Components.Web
-@inject IUserService userService
+﻿@page "/xxx"
+<h3>Index</h3>
+<p>
+    <LoginDisplay></LoginDisplay>
+</p>
+@code {
 
-<PageTitle>FeSiweb</PageTitle>
-
-<style>
-    body {
-    color: white;
-    background-color: #005E3F; /* Hintergrundfarbe */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    }
-
-    .component-border {
-    border: 2px solid black; /* Schwarze Umrandung */
-    padding: 10px;
-    }
-</style>
-
-<p><h1>Willkommen bei FeSiweb @Name</h1></p>
-<div class="component-border">
-    <DoubleCheckboxWithButton Header=@Header Text1=@Text1 Text2=@Text2 TextColor="#FFFFFF" BackgroundColor="#18AB42" isFirstChecked="true" isSecondChecked="true"/>
-</div>
-
-@code
-{
-    private string Header = "FeSiweb-Nutzungsvoraussetzung";
-    private string Text1 = "Die korrekte Veraktung sowie die Vermeidung von fusionierten Dokumenten (= mehr als ein Fachdokument innerhalb einer Datei) im Archivsystem, liegt in der Verantwortung des Einreichers.";   
-    private string Text2 = "Beim Hochladen von Dokumenten für mehr als einen Versicherten, stellt der Einreicher sicher das ein fachlicher Zusammenhang besteht.";
-    private string Name = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = await userService.GetUserAsync();
-        Name = user;
-    }
 }
