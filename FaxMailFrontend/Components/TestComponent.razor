@@ -11,7 +11,6 @@
 @inject SweetAlertService Swal
 @inject ILogger<TestComponent> logger
 @inject IFavoritenService favoritenService
-@inject INutzer nutzer
 
 @if (FH != null)
 {
@@ -103,34 +102,32 @@
             }
             @if (FH.Files[FH.selectedFileIndex].KanalartApproved)  
             {  
-                <p>  
-                    @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)  
-                    {  
-                        <div style="display: flex; justify-content: space-between;">  
-                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>  
-                            oder  
-                            <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>  
-                        </div>  
-                    }  
-                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)  
-                    {  
-                        <p>  
-                            Selektierte Kanalart ist: LateScan  
-                        </p>  
-                    }  
-                    else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)  
-                    {  
-                        <p>  
-                            Selektierte Kanalart ist: EPost  
-                        </p>  
-                    }  
-                    else  
-                    {  
-                        <p>  
-                            <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>  
-                        </p>  
-                    }  
-                </p>  
+                @if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.Beide)  
+                {  
+                    <div style="display: flex; justify-content: space-between;">  
+                        <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.lateScan)">LateScan</button>  
+                        oder  
+                        <button style="width: 48%;" @onclick="() => SetKanalArt(KanalArt.EPost)">EPost</button>  
+                    </div>  
+                }  
+                else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.lateScan)  
+                {  
+                    <p>  
+                        Selektierte Kanalart ist: LateScan  
+                    </p>  
+                }  
+                else if (FH.Files[FH.selectedFileIndex].KanalArt == KanalArt.EPost)  
+                {  
+                    <p>  
+                        Selektierte Kanalart ist: EPost  
+                    </p>  
+                }  
+                else  
+                {  
+                    <p>  
+                        <strong style="color:red;">Kanalartermittlung ist fehlgeschlagen!</strong>  
+                    </p>  
+                }  
             }  
             @if (FH.Files[FH.selectedFileIndex].OrdnungsbegriffAppoved)
             {
@@ -492,7 +489,7 @@
     private string? selectedunterkategory;
     private string? dokumentenKlasse;
     private bool isFavorit = false;
-
+    //private INutzer nutzer = new Nutzer();
     private bool nutzeFav = false;
 
     private string GetFavoritIcon()
@@ -545,18 +542,18 @@
     private void ValidateGPNR(ChangeEventArgs e)
     {
         var input = e.Value?.ToString();
-        isGPNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+        isGPNRValid = !string.IsNullOrEmpty(input) && (input.Length == 9 || input.Length == 10);
 
     }
     private void ValidateLEIK(ChangeEventArgs e)
     {
         var input = e.Value?.ToString();
-        isBTNRValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+        isBTNRValid = !string.IsNullOrEmpty(input) && (input.Length == 9 || input.Length == 10);
     }
     private void ValidateBTNR(ChangeEventArgs e)
     {
         var input = e.Value?.ToString();
-        isLEIKValid = !string.IsNullOrEmpty(input) && (input.Length == 20);
+        isLEIKValid = !string.IsNullOrEmpty(input) && (input.Length == 9 || input.Length == 10);
     }
     private void ValidateKVNR(ChangeEventArgs e)
     {
@@ -1075,11 +1072,11 @@
         if (dokumentenKlasse != null)
         {
 
-            List<string> fav = await docService.GettAllFavoritesByUser(nutzer.Id);
+            List<string> fav = await docService.GettAllFavoritesByUser(FH!.Nutzer.Id);
             if (!fav.Contains(dokumentenKlasse))
             {
-                await docService.AddFavorite(nutzer.Id, dokumentenKlasse);
-                Favorites = await docService.GettAllFavoritesByUser(nutzer.Id);
+                await docService.AddFavorite(FH!.Nutzer.Id, dokumentenKlasse);
+                Favorites = await docService.GettAllFavoritesByUser(FH!.Nutzer.Id);
                 var result = await Swal.FireAsync(new SweetAlertOptions
                     {
                         Title = "Achtung!",
@@ -1090,8 +1087,8 @@
             }
             else
             {
-                await docService.DropFavorite(nutzer.Id, dokumentenKlasse);
-                Favorites = await docService.GettAllFavoritesByUser(nutzer.Id);
+                await docService.DropFavorite(FH!.Nutzer.Id, dokumentenKlasse);
+                Favorites = await docService.GettAllFavoritesByUser(FH!.Nutzer.Id);
                 var result = await Swal.FireAsync(new SweetAlertOptions
                     {
                         Title = "Achtung!",
@@ -1152,6 +1149,7 @@
                     try
                     {
                         dokumente = docService.GettAllDocumentsBySubkategorySync(selectedunterkategory!, selectedCategory!);
+                        dokumentenKlasse = dokumente[0];
                         //FH!.Files[FH.selectedFileIndex].DokumentenKlasse = dokumentenKlasse!;
                         StateHasChanged();
                     }

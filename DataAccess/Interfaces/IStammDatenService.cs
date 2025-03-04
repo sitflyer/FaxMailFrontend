@@ -1,6 +1,4 @@
-﻿using DataAccessDLL.Interfaces;
-
-namespace DataAccessDLL.Services
+﻿namespace DataAccessDLL.Interfaces
 {
 	public interface IStammDatenService
 	{

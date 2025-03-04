@@ -1,4 +1,6 @@
 using CurrieTechnologies.Razor.SweetAlert2;
+using DataAccessDLL.Modell;
+using DataAccessDLL.Services;
 using FaxMailFrontend.Data;
 using FaxMailFrontend.ViewModel;
 using MailDLL;
@@ -9,7 +11,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.JSInterop;
-
+using System.Security.Claims;
 using XMLBox;
 
 namespace FaxMailFrontend.Pages
@@ -18,6 +20,7 @@ namespace FaxMailFrontend.Pages
 	{
 		int MaxFileSize = 1;
 		int MaxFilesPerStack = 1;
+		int MaxPagesPerPDF = 1;
 		IJSObjectReference? _module;
 		IJSObjectReference? _dropzoneInstance;
 		ElementReference dropZoneElement;
@@ -25,59 +28,83 @@ namespace FaxMailFrontend.Pages
 
 		private string messageText = "";
 		private bool success = false;
-		private string username = "Cindy Kassab";
+		private const string username = "Cindy Kassab";
 
-		private string telefonnummer = "0171-1272712";
-		private string mail = "cindy.kassab@aok.de";
+		private const string telefonnummer = "0171-1272712";
+		private const string mail = "cindy.kassab@aok.de";
 		private bool absendenVerboten = true;
 		private string FilePath { get; set; } = "";
 		private string usedPathname = "";
 		private FileInformation? selectedFile;
 		private string basePath = "";
 		private int uploadcounter = 0;
-		private IBrowserFile filemerker;
+		private IBrowserFile? filemerker;
 		private bool protector = false;
+		private Nutzer? nutzer = null;
 		protected override async Task OnInitializedAsync()
 		{
+			base.OnInitialized();
+			await InitializeFileHandler();
+			try
+			{
+				basePath = env.WebRootPath + "\\Files";
+				MaxFileSize = GetMaxMB() * 1024 * 1024;
+				MaxFilesPerStack = GetMaxFilesPerStack();
+				MaxPagesPerPDF = Configuration.GetValue<int>("FileSettings:MaxPagesPerPDF");
 
-			basePath = env.WebRootPath + "\\Files";
-			MaxFileSize = GetMaxMB() * 1024 * 1024;
-			MaxFilesPerStack = GetMaxFilesPerStack();
-			if (Configuration.GetValue<string>("FileSettings:Targetfolder") != null)
-			{
-				fileHandler.Targetfolder = Configuration.GetValue<string>("FileSettings:Targetfolder")!;
+				if (Configuration.GetValue<string>("FileSettings:Targetfolder") != null)
+				{
+					fileHandler.Targetfolder = Configuration.GetValue<string>("FileSettings:Targetfolder")!;
+				}
+				else
+				{
+					ErrorHandle("Targetfolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (Configuration.GetValue<string>("FileSettings:EPostFolder") != null)
+				{
+					fileHandler.EPostFolder = Configuration.GetValue<string>("FileSettings:EPostFolder")!;
+				}
+				else
+				{
+					ErrorHandle("EPostFolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (Configuration.GetValue<string>("FileSettings:LateScanFolder") != null)
+				{
+					fileHandler.LateScanFolder = Configuration.GetValue<string>("FileSettings:LateScanFolder")!;
+				}
+				else
+				{
+					ErrorHandle("LateScanFolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (Configuration.GetValue<string>("FileSettings:Protokollfolder") != null)
+				{
+					fileHandler.Protokollfolder = Configuration.GetValue<string>("FileSettings:Protokollfolder")!;
+				}
+				else
+				{
+					ErrorHandle("Protokollfolder not found in appsettings.json", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (!Directory.Exists(fileHandler.Protokollfolder))
+				{
+					ErrorHandle("Protokollfolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (!Directory.Exists(fileHandler.EPostFolder))
+				{
+					ErrorHandle("EPostFolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (!Directory.Exists(fileHandler.LateScanFolder))
+				{
+					ErrorHandle("LateScanFolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
+				if (!Directory.Exists(fileHandler.Targetfolder))
+				{
+					ErrorHandle("Targetfolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
+				}
 			}
-			else
+
+			catch (Exception ex)
 			{
-				logger.LogError("Targetfolder not found in appsettings.json");
-				eh.Systemmessage = "Targetfolder not found in appsettings.json";
-				eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
-			}
-			if (Configuration.GetValue<string>("FileSettings:Protokollfolder") != null)
-			{
-				fileHandler.Protokollfolder = Configuration.GetValue<string>("FileSettings:Protokollfolder")!;
-			}
-			else
-			{
-				logger.LogError("Protokollfolder not found in appsettings.json");
-				eh.Systemmessage = "Protokollfolder not found in appsettings.json";
-				eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
-			}
-			if (!Directory.Exists(fileHandler.Protokollfolder))
-			{
-				logger.LogError("Protokollfolder existiert nicht.");
-				eh.Systemmessage = "Protokollfolder existiert nicht.";
-				eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
-			}
-			if (!Directory.Exists(fileHandler.Targetfolder))
-			{
-				logger.LogError("Targetfolder existiert nicht.");
-				eh.Systemmessage = "Targetfolder existiert nicht.";
-				eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				ErrorHandle(ex.Message, ErrorCode.AllgemeinerFehler);
 			}
 		}
 
@@ -104,7 +131,7 @@ namespace FaxMailFrontend.Pages
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine(ex.Message);
+					ErrorHandle(ex.Message, ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
 				}
 			}
 		}
@@ -123,9 +150,7 @@ namespace FaxMailFrontend.Pages
 				}
 				catch (Exception ex)
 				{
-					eh.Systemmessage = ex.Message;
-					eh.EC = ErrorCode.VerzeichnisKonnteNichtAngelegtWerden;
-					navigationManager.NavigateTo($"/ErrorPage");
+					ErrorHandle(ex.Message, ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
 				}
 			}
 			try
@@ -181,7 +206,7 @@ namespace FaxMailFrontend.Pages
 			{
 				if (ex.Message.Contains("The maximum number of files accepted"))
 				{
-					var result = await Swal.FireAsync(new SweetAlertOptions
+					await Swal.FireAsync(new SweetAlertOptions
 					{
 						Title = "Achtung!",
 						Text = $"Die Anzahl der übertragenen Daten ist größer als das Maximum von {MaxFilesPerStack}",
@@ -191,19 +216,17 @@ namespace FaxMailFrontend.Pages
 				}
 				else if (ex.Message.Contains("exceeds the maximum of"))
 				{
-					var result = await Swal.FireAsync(new SweetAlertOptions
+					await Swal.FireAsync(new SweetAlertOptions
 					{
 						Title = "Achtung!",
-						Text = $"Die übertragene Datei \"{Path.GetFileName(filemerker.Name)}\" ist größer als das Maximum von {MaxFileSize} Bytes",
+						Text = $"Die übertragene Datei \"{Path.GetFileName(filemerker!.Name)}\" ist größer als das Maximum von {MaxFileSize} Bytes",
 						Icon = SweetAlertIcon.Warning,
 						ConfirmButtonText = "OK"
 					});
 				}
 				else
 				{
-					eh.Systemmessage = ex.Message;
-					eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-					navigationManager.NavigateTo($"/ErrorPage");
+					ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
 				}
 			}
 		}
@@ -214,7 +237,7 @@ namespace FaxMailFrontend.Pages
 			{
 				if (fileHandler.Files.Count > 0)
 				{
-					var result = Swal.FireAsync(new SweetAlertOptions
+					await Swal.FireAsync(new SweetAlertOptions
 					{
 						Title = "Achtung!",
 						Text = "Interne Navigation ist nicht erlaubt!",
@@ -230,7 +253,7 @@ namespace FaxMailFrontend.Pages
 		{
 			try
 			{
-				Mail myMail = new Mail(Path.Combine(path, filename));
+				Mail myMail = new(Path.Combine(path, filename));
 				myMail.CollectAttachments();
 				List<string> filelistFromMail = myMail.WriteAttachments();
 				int count = 0;
@@ -242,7 +265,7 @@ namespace FaxMailFrontend.Pages
 			}
 			catch
 			{
-				var result = Swal.FireAsync(new SweetAlertOptions
+				await Swal.FireAsync(new SweetAlertOptions
 				{
 					Title = "Achtung!",
 					Text = "Die eingereichte E-Mail enthält nicht auslesbaren Inhalt.Bitte die Dokumente einzeln einreichen.",
@@ -258,13 +281,13 @@ namespace FaxMailFrontend.Pages
 		}
 		private async Task RunChecks()
 		{
-			List<FileCheckResult> filelistToDelete = new List<FileCheckResult>();
+			List<FileCheckResult> filelistToDelete = [];
 			try
 			{
 				foreach (var file in fileHandler.Files)
 				{
 					string path = Path.Combine(env.WebRootPath, "Files", usedPathname, file.FileName);
-					string? message = FileHandler.CheckFile(path, MaxFileSize);
+					string? message = FileHandler.CheckFile(path, MaxFileSize, MaxPagesPerPDF);
 					if (message != null)
 					{
 						filelistToDelete.Add(new FileCheckResult { Message = message, File = file.FileName });
@@ -289,48 +312,70 @@ namespace FaxMailFrontend.Pages
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
 			}
 		}
-		//private void HandleFileHandlerChanged(FileHandler updatedFileHandler)
-		//{
-		//	fileHandler = updatedFileHandler;
-		//	//if (fileHandler.Files.Count == 0)
-		//	selectedFile = null;
-		//	CheckIfAbsendenErlaubt();
-		//	StateHasChanged();
-		//}
+
 		private void HandleTestFilehandler(FileHandler updatedFileHandler)
 		{
 			fileHandler = updatedFileHandler;
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
-		//private void HandleFileUpdate(FileInformation file)
-		//{
-		//	selectedFile = file;
-		//	StateHasChanged();
-		//}
-
 		private void HandlePathNameChanged(FileInformation file)
 		{
 			selectedFile = file;
 			CheckIfAbsendenErlaubt();
 			StateHasChanged();
 		}
-		protected override void OnInitialized()
-		{
-			base.OnInitialized();
-			InitializeFileHandler();
-		}
 
-		private void InitializeFileHandler()
+		private async Task InitializeFileHandler()
 		{
 			fileHandler.UUID = Guid.NewGuid().ToString();
 			fileHandler.ErrorMessage = "";
 			fileHandler.Path = $"{env.WebRootPath}\\Files";
+			if (nutzer == null)
+			{
+				nutzer = new Nutzer();
+				nutzer.Kennung = httpContextAccessor.HttpContext!.User.Identity!.Name;
+				if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value is null)
+				{
+					nutzer.Email = "keine EMail zugewiesen!";
+				}
+				else
+				{
+					nutzer.Email = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value!;
+				}
+				if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value is null)
+				{
+					nutzer.Vorname = "kein Vorname zugewiesen!";
+				}
+				else
+				{
+					nutzer.Vorname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value!;
+				}
+				if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value is null)
+				{
+					nutzer.Nachname = "kein Nachname zugewiesen!";
+				}
+				else
+				{
+					nutzer.Nachname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value!;
+				}
+
+				nutzer.Telefonnummer = "keine Telefonnummer zugewiesen!";
+
+				bool nutzerExists = await favoritenService.IsNutzerExisting(nutzer.Kennung!);
+				if (nutzerExists)
+				{
+					nutzer.Id = await favoritenService.GetUserIDFromKennung(nutzer.Kennung!);
+				}
+				else
+				{
+					nutzer.Id = await favoritenService.CreateNutzerByKennungAndReturnNewID(nutzer);
+				}
+			}
+			fileHandler.Nutzer = nutzer;
 		}
 
 		private void CheckIfAbsendenErlaubt()
@@ -355,19 +400,25 @@ namespace FaxMailFrontend.Pages
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
 			}
 			success = true;
 			StateHasChanged();
 		}
 
+		private void ErrorHandle(string ex, ErrorCode ec)
+		{
+			logger.LogError(DateTime.Now.ToString() + " => " + ex);
+			eh.Systemmessage = ex;
+			eh.EC = ec;
+			navigationManager.NavigateTo($"/ErrorPage");
+		}
 		private async Task CopyAllFileToOuput()
 		{
 			//Files benennen
 			try
 			{
+				string ziel = "";
 				int counter = 0;
 				foreach (var file in fileHandler.Files)
 				{
@@ -375,36 +426,86 @@ namespace FaxMailFrontend.Pages
 					string extension = Path.GetExtension(orgfile);
 					string kennung = counter.ToString("D3");
 					string zielfilename = fileHandler.UUID + "_" + kennung + extension;
-					string ziel = Path.Combine(fileHandler.Targetfolder, fileHandler.Targetfolder, zielfilename);
-					string sicherheit = Path.Combine(fileHandler.Targetfolder, fileHandler.Protokollfolder, zielfilename);
+					ziel = "";
+					if (file.KanalArt == KanalArt.EPost)
+					{
+						ziel = Path.Combine(fileHandler.EPostFolder, zielfilename);
+					}
+					else if (file.KanalArt == KanalArt.lateScan)
+					{
+						ziel = Path.Combine(fileHandler.LateScanFolder, zielfilename);
+					}
+					else
+					{
+						ziel = Path.Combine(fileHandler.Targetfolder, zielfilename);
+					}
+					string sicherheit = Path.Combine(fileHandler.EPostFolder, fileHandler.Protokollfolder, zielfilename);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), ziel);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), sicherheit);
-					await CreateXMLFile(ziel, file);
-
+					CreateXMLFile(ziel, file);
+					await ReportToDB(file, ziel);
+					ReportToLogger(file, ziel);
 					counter++;
 				}
-				await DeleteWorkFolder();
+				DeleteWorkFolder();
+				string readypath = Path.GetDirectoryName(ziel)!;
+				string rdyFile = Path.Combine(readypath, $"{fileHandler.UUID}.rdy");
+				File.Create(rdyFile);
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
 			}
 		}
 
-		private async Task CreateXMLFile(string ziel, FileInformation file)
+		private void ReportToLogger(FileInformation file, string zielfilename)
+		{
+			logger.LogInformation("Datum: {Date} Einreicher: {Einreicher} Filename: {Filename} Exportname: {Kennung}",
+				DateTime.Now, fileHandler.Nutzer.Kennung, file.FileName, zielfilename);
+		}
+
+		private async Task ReportToDB(FileInformation file, string ziel)
+		{
+			try
+			{
+				await reportingService.AddReport(new Frontendreport
+				{
+					Nutzerkennung = fileHandler.Nutzer.Kennung!,
+					EingereichtAm = DateTime.Now,
+					Dokumenttyp = Path.GetExtension(file.FileName),
+					Originalname = file.FileName,
+					FinalerName = Path.GetFileName(ziel),
+					Kanalart = file.KanalArt.ToString(),
+					Dokumentenklasse = file.DokumentenKlasse,
+					Kvnr = file.KVNR,
+					Bpnr = file.GPNR,
+					Btnr = file.BTNR,
+					Boid = file.Fallbuendelnummer,
+					Produktgruppe = file.Produktgruppe,
+					Filesize = new FileInfo(ziel).Length.ToString()
+				});
+			}
+			catch (Exception ex)
+			{
+				ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
+			}
+			return;
+		}
+
+		private void CreateXMLFile(string ziel, FileInformation file)
 		{
 			string output = Path.GetFileNameWithoutExtension(ziel) + ".xml";
-			string outputpath = Path.Combine(fileHandler.Targetfolder, output);
+			string outputpath = Path.Combine(Path.GetDirectoryName(ziel)!, output);
 			string protokollpath = Path.Combine(fileHandler.Protokollfolder, output);
-			List<string> DokumentZeilen = new() { };
-			DokumentZeilen.Add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-			DokumentZeilen.Add("<email>");
-			DokumentZeilen.Add("<inboundchannel>EM</inboundchannel>");
-			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "receivedDate", DateTime.Now.ToString("dd-MM-yyyy")));
-			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "processtimestamp", DateTime.Now.ToString("dd-MM-yyyy")));
-			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentFrom", fileHandler.Nutzer.Vorname + " " + fileHandler.Nutzer.Nachname));
+			List<string> DokumentZeilen =
+			[
+				"<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+				"<email>",
+				"<inboundchannel>EM</inboundchannel>",
+				string.Format("<{0}>{1}</{0}>", "receivedDate", DateTime.Now.ToString("dd-MM-yyyy")),
+				string.Format("<{0}>{1}</{0}>", "processtimestamp", DateTime.Now.ToString("dd-MM-yyyy")),
+				string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentFrom", fileHandler.Nutzer.Vorname + " " + fileHandler.Nutzer.Nachname),
+			];
 			if (file.KanalArt == KanalArt.EPost)
 			{
 				DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_SentTo", "Pfad_EPost"));
@@ -440,10 +541,10 @@ namespace FaxMailFrontend.Pages
 			}
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_Filename", file.FileName));
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_Fsname", Path.GetFileName(ziel)));
-			FileInfo fileInfo = new FileInfo(ziel);
+			FileInfo fileInfo = new(ziel);
 			DokumentZeilen.Add(string.Format("<{0}>{1}</{0}>", "CV_FaxMail_Filesize", fileInfo.Length));
 			DokumentZeilen.Add("</email>");
-			TextDokument textDokument = new TextDokument(outputpath, DokumentZeilen);
+			TextDokument textDokument = new(outputpath, DokumentZeilen);
 
 			try
 			{
@@ -452,14 +553,13 @@ namespace FaxMailFrontend.Pages
 			}
 			catch (Exception ex)
 			{
-				eh.Systemmessage = ex.Message;
-				eh.EC = ErrorCode.DatenKonntenNichtKopiertWerden;
-				navigationManager.NavigateTo($"/ErrorPage");
+				ErrorHandle(ex.Message, ErrorCode.DatenKonntenNichtKopiertWerden);
 			}
 		}
 
-		private void Refresh()
+		private async Task Refresh()
 		{
+			await InitializeFileHandler(); 
 			protector = true;
 			navigationManager.NavigateTo("/EmailSinglePage", true);
 		}
@@ -470,33 +570,22 @@ namespace FaxMailFrontend.Pages
 			_module = null;
 			_dropzoneInstance = null;
 			messageText = "Keine Fehler";
-			await DeleteWorkFolder();
-			Refresh();
+			DeleteWorkFolder();
+			await Refresh();
 		}
-		private async Task DeleteWorkFolder()
+		private void DeleteWorkFolder()
 		{
 			try
 			{
 				string path = Path.Combine(env.WebRootPath, "Files", fileHandler.UUID);
-				//var result = await Swal.FireAsync(new SweetAlertOptions
-				//{
-				//	Title = "Achtung!",
-				//	Text = $"{path} wurde gelöscht.",
-				//	Icon = SweetAlertIcon.Info,
-				//	ConfirmButtonText = "OK"
-				//});
 				if (Directory.Exists(path))
 				{
 					Directory.Delete(path, true);
 				}
-				//Directory.Delete(Path.Combine($env.WebRootPath, "Files", fileHandler.UUID), true);
 			}
-			catch (Exception ex)
+			catch
 			{
-
 			}
-
-
 		}
 	}
 }

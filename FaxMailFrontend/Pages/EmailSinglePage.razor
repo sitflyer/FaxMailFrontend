@@ -13,8 +13,9 @@
 @inject IConfiguration Configuration
 @inject ILogger<EmailSinglePage> logger
 @inject IHttpContextAccessor httpContextAccessor
-@inject INutzer nutzer
-
+@* @inject INutzer nutzer *@
+@inject IReportingService reportingService
+@inject IFavoritenService favoritenService
 @inject SweetAlertService Swal
 
 @page "/EmailSinglePage"

@@ -1,5 +1,4 @@
 ﻿using DataAccessDLL.Interfaces;
-using DataAccessDLL.Services;
 using iText.Kernel.Pdf;
 
 namespace FaxMailFrontend.ViewModel
@@ -11,18 +10,13 @@ namespace FaxMailFrontend.ViewModel
 		public string Path { get; set; } = string.Empty;
 		public string ErrorMessage { get; set; } = string.Empty;
 		public int selectedFileIndex = -1;
+		public string EPostFolder { get; set; } = string.Empty;
+		public string LateScanFolder { get; set; } = string.Empty;
 		public string Targetfolder { get; set; } = string.Empty;
 		public string Protokollfolder { get; set; } = string.Empty;
 		public List<IDokumentenProcessor> DokumentenListe { get; set; }
 		public List<string> GPOSList { get; set; } = new List<string>();
 		public INutzer Nutzer { get; set; }
-
-		//public long UserID { get; set; } = 1;
-		//public string Vorname { get; set; } = "";
-		//public string Name { get; set; } = "";
-		//public string Email { get; set; } = "";
-		//public string Telefon { get; set; } = "";
-
 		public FileHandler(IDokuService service, IStammDatenService stammDaten, INutzer nutzer)
 		{
 			Nutzer = nutzer;
@@ -72,7 +66,7 @@ namespace FaxMailFrontend.ViewModel
 				return false;
 			}
 		}
-		public static string? CheckFile(string filename, int maxMB)
+		public static string? CheckFile(string filename, int maxMB, int maxPagesPerPDF)
 		{
 			if (!CheckFileSize(filename, maxMB))
 				return $"Die Dateigröße des von Ihnen hochgeladenen Dokuments \"{System.IO.Path.GetFileName(filename)}\" ist nicht zulässig. Das Dokument kann nicht verarbeitet werden.";
@@ -84,7 +78,7 @@ namespace FaxMailFrontend.ViewModel
 			{
 				if (!CheckPassword(filename))
 					return $"Die Datei {filename} ist passwordgeschützt oder korrupt";
-				if (!CheckPageCount(filename))
+				if (!CheckPageCount(filename, maxPagesPerPDF))
 					return $"„Die erlaubte Seitenanzahl des von Ihnen hochgeladenen Dokuments ist nicht zulässig. Das Dokument kann nicht verarbeitet werden.";
 			}
 			return null;
@@ -114,7 +108,7 @@ namespace FaxMailFrontend.ViewModel
 			string fileExtension = System.IO.Path.GetExtension(filename).ToLower();
 			return allowedExtensions.Contains(fileExtension);
 		}
-		private static bool CheckPageCount(string filename)
+		private static bool CheckPageCount(string filename, int maxPagesPerPDF)
 		{
 			try
 			{
@@ -122,9 +116,8 @@ namespace FaxMailFrontend.ViewModel
 				{
 					using (PdfDocument pdfDocument = new PdfDocument(pdfReader))
 					{
-						int numberOfPages = pdfDocument.GetNumberOfPages();
-						const int maxPageCount = 300;
-						return numberOfPages <= maxPageCount;
+						int numberOfPages = pdfDocument.GetNumberOfPages();						
+						return numberOfPages <= maxPagesPerPDF;
 					}
 				}
 			}
@@ -135,9 +128,8 @@ namespace FaxMailFrontend.ViewModel
 		}
 		private static bool CheckFileSize(string filename, int maxMB)
 		{
-			const long maxFileSize = 20 * 1024 * 1024;
 			FileInfo fileInfo = new FileInfo(filename);
-			return fileInfo.Length <= maxFileSize;
+			return fileInfo.Length <= maxMB;
 		}
 	}
 }

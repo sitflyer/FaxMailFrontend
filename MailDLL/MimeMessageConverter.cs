@@ -9,9 +9,11 @@ namespace MailDLL
 		{
 			try
 			{
-				var mimeMessage = new MimeMessage();
-				mimeMessage.Subject = msg.Subject;
-				mimeMessage.Body = new TextPart("plain") { Text = msg.BodyText };
+				var mimeMessage = new MimeMessage
+				{
+					Subject = msg.Subject,
+					Body = new TextPart("plain") { Text = msg.BodyText }
+				};
 				mimeMessage.From.Add(new MailboxAddress(msg.Sender.DisplayName, msg.Sender.Email));
 				foreach (var recipient in msg.Recipients)
 				{
@@ -19,8 +21,10 @@ namespace MailDLL
 				}
 
 				// Add attachments
-				var multipart = new Multipart("mixed");
-				multipart.Add(mimeMessage.Body);
+				var multipart = new Multipart("mixed")
+				{
+					mimeMessage.Body
+				};
 
 				foreach (var attachment in msg.Attachments)
 				{
@@ -44,9 +48,9 @@ namespace MailDLL
 
 				return mimeMessage;
 			}
-			catch (Exception ex)
+			catch
 			{
-				throw new Exception($"Die eingereichte E-Mail enthält nicht auslesbaren Inhalt. Bitte die Dokumente einzeln einreichen");
+				throw new Exception($"Die eingereichte E-Mail enthält nicht auslesbaren Inhalt. Bitte die Dokumente einzeln einreichen.");
 			}
 		}
 	}

@@ -1,8 +1,87 @@
-﻿@page "/xxx"
-<h3>Index</h3>
-<p>
-    <LoginDisplay></LoginDisplay>
-</p>
-@code {
+﻿@page "/"
+@* @inject IUserService userService *@
+@using DataAccessDLL.Interfaces
+@using DataAccessDLL.Modell
+@using DataAccessDLL.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IHttpContextAccessor httpContextAccessor
+@inject IFavoritenService favoritenService
 
+<PageTitle>FeSiweb</PageTitle>
+
+<style>
+    body {
+    color: white;
+    background-color: #005E3F; /* Hintergrundfarbe */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    }
+
+    .component-border {
+    border: 2px solid black; /* Schwarze Umrandung */
+    padding: 10px;
+    }
+</style>
+
+
+<p>
+    <h1>Willkommen bei FeSiweb @nutzer.Kennung</h1>
+</p>
+<div class="component-border">
+    <DoubleCheckboxWithButton Header=@Header Text1=@Text1 Text2=@Text2 TextColor="#FFFFFF" BackgroundColor="#18AB42" isFirstChecked="true" isSecondChecked="true" />
+</div>
+
+
+
+
+@code
+{
+    private string Header = "FeSiweb-Nutzungsvoraussetzung";
+    private string Text1 = "Die korrekte Veraktung sowie die Vermeidung von fusionierten Dokumenten (= mehr als ein Fachdokument innerhalb einer Datei) im Archivsystem, liegt in der Verantwortung des Einreichers.";   
+    private string Text2 = "Beim Hochladen von Dokumenten für mehr als einen Versicherten, stellt der Einreicher sicher das ein fachlicher Zusammenhang besteht.";
+    private INutzer nutzer = new Nutzer();
+    protected override async Task OnInitializedAsync()
+    {
+        nutzer.Kennung = httpContextAccessor.HttpContext!.User.Identity!.Name;
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value is null)
+        {
+            nutzer.Email = "keine EMail zugewiesen!";
+        }
+        else
+        {
+            nutzer.Email = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Email)?.Value!;
+        }
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value is null)
+        {
+            nutzer.Vorname = "kein Vorname zugewiesen!";
+        }
+        else
+        {
+            nutzer.Vorname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.GivenName)?.Value!;
+        }
+        if (httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value is null)
+        {
+            nutzer.Nachname = "kein Nachname zugewiesen!";
+        }
+        else
+        {
+            nutzer.Nachname = httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.Surname)?.Value!;
+        }
+        
+        nutzer.Telefonnummer = "keine Telefonnummer zugewiesen!";
+        
+        bool nutzerExists = await favoritenService.IsNutzerExisting(nutzer.Kennung!);
+        if (nutzerExists)
+        {
+            nutzer.Id = await favoritenService.GetUserIDFromKennung(nutzer.Kennung!);
+        }
+        else
+        {
+            nutzer.Id = await favoritenService.CreateNutzerByKennungAndReturnNewID(nutzer);
+        }
+    }
 }

@@ -1,6 +1,7 @@
 ﻿@inject NavigationManager navigationManager
 @inject ErrorHandler eh
 @inject SweetAlertService Swal
+@inject ILogger<FileHandlerComponent> logger
 
 @using FaxMailFrontend.Data
 @namespace FaxMailFrontend.Components
@@ -96,6 +97,7 @@
                     }
                     else
                     {
+                        logger.LogError($"Die Datei {filename} konnte nicht gelöscht werden.");
                         eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
                         eh.EC = ErrorCode.KeineDateiGeloescht;
                         navigationManager.NavigateTo($"/ErrorPage");
@@ -109,6 +111,7 @@
                 }
                 else
                 {
+                    logger.LogError($"Die Datei {filename} konnte nicht gelöscht werden.");
                     eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
                     eh.EC = ErrorCode.KeineDateiGeloescht;
                     navigationManager.NavigateTo($"/ErrorPage");

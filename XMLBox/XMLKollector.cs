@@ -11,12 +11,12 @@ namespace XMLBox
 
 		public XMLKollector(XMLFile xdoc)
 		{
-			Knoten = new() { };
-			foreach (XmlNode node in xdoc._XMLFile.SelectNodes("//*"))
+			Knoten = [];
+			foreach (XmlNode node in xdoc._XMLFile.SelectNodes("//*")!)
 			{
 				XMLKnoten xnode = new(node.Name, node.InnerText);
-				List<XMLAttribut> attribs = new() { };
-				foreach (XmlAttribute xatt in node.Attributes)
+				List<XMLAttribut> attribs = [];
+				foreach (XmlAttribute xatt in node.Attributes!)
 				{
 					attribs.Add(new(xatt.Name, xatt.Value));
 				}

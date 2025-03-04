@@ -18,8 +18,10 @@ namespace XMLBox
 			DokumentName = filename;
 			try
 			{
-				_XMLFile = new();
-				_XMLFile.PreserveWhitespace = true;
+				_XMLFile = new()
+				{
+					PreserveWhitespace = true
+				};
 				_XMLFile.Load(filename);
 				XMLCollectedData = new(this);
 			}
@@ -28,9 +30,9 @@ namespace XMLBox
 				throw new Exception($"Datei {DokumentName} konnte nicht gelesen werden. {ex.Message}");
 			}
 		}
-		public string GetKnotenValue(string knotenname)
+		public string? GetKnotenValue(string knotenname)
 		{
-			foreach (XmlNode node in _XMLFile.SelectNodes("//*"))
+			foreach (XmlNode node in _XMLFile.SelectNodes("//*")!)
 			{
 				if (node.Name == knotenname)
 				{
@@ -72,8 +74,6 @@ namespace XMLBox
 				throw new Exception($"Der String {dateString} konnte nicht in ein Datum konvertirert werden. {ex.Message}");
 
 			}
-			date = DateTime.Now;
-			return false;
 		}
 		/// <summary>
 		/// Sichert das Dokument auf den Filenamen aus DokumentName. Ggfls. den DokumentName vorher setzen. (Property der Klasse.)
@@ -106,11 +106,11 @@ namespace XMLBox
 		}
 		public bool RemoveSingleKnoten(string knotenname)
 		{
-			foreach (XmlNode node in _XMLFile.SelectNodes("//*"))
+			foreach (XmlNode node in _XMLFile.SelectNodes("//*")!)
 			{
 				if (node.Name == knotenname)
 				{
-					node.ParentNode.RemoveChild(node);
+					node.ParentNode!.RemoveChild(node);
 					return true;
 				}
 			}
@@ -119,11 +119,11 @@ namespace XMLBox
 
 		public bool ChangeAttributeValue(string knotenname, string attributename, string replacevalue)
 		{
-			foreach (XmlNode node in _XMLFile.SelectNodes("//*"))
+			foreach (XmlNode node in _XMLFile.SelectNodes("//*")!)
 			{
 				if (node.Name == knotenname)
 				{
-					foreach (XmlAttribute xatt in node.Attributes)
+					foreach (XmlAttribute xatt in node.Attributes!)
 					{
 						if (xatt.Name == attributename)
 						{

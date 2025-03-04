@@ -1,7 +1,6 @@
-﻿using DataAccessDLL.Interfaces;
-using DataAccessDLL.Modell;
+﻿using DataAccessDLL.Modell;
 
-namespace DataAccessDLL.Services
+namespace DataAccessDLL.Interfaces
 {
 	public interface IFavoritenService
 	{
