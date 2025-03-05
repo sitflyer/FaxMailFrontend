@@ -92,6 +92,22 @@
                     if (fileHandler.DeleteFile(filename))
                     {
                         fileHandler.Files.Clear();
+                        fileHandler.selectedFileIndex = -1;
+                        await OnPathChanged.InvokeAsync(null);
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        logger.LogError($"Die Datei {filename} konnte nicht gelöscht werden.");
+                        eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
+                        eh.EC = ErrorCode.KeineDateiGeloescht;
+                        navigationManager.NavigateTo($"/ErrorPage");
+                    }
+                }
+                else
+                {
+                    if (fileHandler.DeleteFile(filename))
+                    {
                         await OnPathChanged.InvokeAsync(null);
                         StateHasChanged();
                     }
@@ -104,18 +120,6 @@
                     }
                 }
                 
-                if (fileHandler.DeleteFile(filename))
-                {
-                    await OnPathChanged.InvokeAsync(null);
-                    StateHasChanged();
-                }
-                else
-                {
-                    logger.LogError($"Die Datei {filename} konnte nicht gelöscht werden.");
-                    eh.Systemmessage = $"Die Datei {filename} konnte nicht gelöscht werden.";
-                    eh.EC = ErrorCode.KeineDateiGeloescht;
-                    navigationManager.NavigateTo($"/ErrorPage");
-                }
             }
         }
     }

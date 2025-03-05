@@ -145,12 +145,12 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Firmenkunden: " + ex.Message);
 			}
 		}
-		public async Task<List<ILeistungserbringerLanr>> GetVersichertenByLeik(string bpnr)
+		public async Task<List<ILeistungserbringerLanr>> GetVersichertenByLeik(string arztnummer)
 		{
 			try
 			{
 				return await StammContext.LeistungserbringerLanrs
-					.Where(sv => sv.Bpnr == bpnr)
+					.Where(sv => sv.Arztnummer == arztnummer)
 					.Cast<ILeistungserbringerLanr>()
 					.ToListAsync();
 			}
@@ -159,12 +159,12 @@ namespace DataAccessDLL.Services
 				throw new Exception("Fehler beim Lesen der Leistungserbringer: " + ex.Message);
 			}
 		}
-		public List<ILeistungserbringerLanr> GetVersichertenByLeikSync(string bpnr)
+		public List<ILeistungserbringerLanr> GetVersichertenByLeikSync(string arztnummer)
 		{
 			try
 			{
 				return StammContext.LeistungserbringerLanrs
-					.Where(sv => sv.Bpnr == bpnr)
+					.Where(sv => sv.Arztnummer == arztnummer)
 					.Cast<ILeistungserbringerLanr>()
 					.ToList();
 			}

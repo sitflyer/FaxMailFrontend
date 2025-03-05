@@ -52,14 +52,6 @@ namespace FaxMailFrontend.Pages
 				MaxFilesPerStack = GetMaxFilesPerStack();
 				MaxPagesPerPDF = Configuration.GetValue<int>("FileSettings:MaxPagesPerPDF");
 
-				if (Configuration.GetValue<string>("FileSettings:Targetfolder") != null)
-				{
-					fileHandler.Targetfolder = Configuration.GetValue<string>("FileSettings:Targetfolder")!;
-				}
-				else
-				{
-					ErrorHandle("Targetfolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
-				}
 				if (Configuration.GetValue<string>("FileSettings:EPostFolder") != null)
 				{
 					fileHandler.EPostFolder = Configuration.GetValue<string>("FileSettings:EPostFolder")!;
@@ -96,12 +88,7 @@ namespace FaxMailFrontend.Pages
 				{
 					ErrorHandle("LateScanFolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
 				}
-				if (!Directory.Exists(fileHandler.Targetfolder))
-				{
-					ErrorHandle("Targetfolder existiert nicht.", ErrorCode.VerzeichnisKonnteNichtAngelegtWerden);
-				}
 			}
-
 			catch (Exception ex)
 			{
 				ErrorHandle(ex.Message, ErrorCode.AllgemeinerFehler);
@@ -408,6 +395,7 @@ namespace FaxMailFrontend.Pages
 
 		private void ErrorHandle(string ex, ErrorCode ec)
 		{
+			DeleteWorkFolder();
 			logger.LogError(DateTime.Now.ToString() + " => " + ex);
 			eh.Systemmessage = ex;
 			eh.EC = ec;
@@ -437,9 +425,9 @@ namespace FaxMailFrontend.Pages
 					}
 					else
 					{
-						ziel = Path.Combine(fileHandler.Targetfolder, zielfilename);
+						ziel = Path.Combine(fileHandler.EPostFolder, zielfilename);
 					}
-					string sicherheit = Path.Combine(fileHandler.EPostFolder, fileHandler.Protokollfolder, zielfilename);
+					string sicherheit = Path.Combine(fileHandler.Protokollfolder, zielfilename);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), ziel);
 					File.Copy(Path.Combine(env.WebRootPath, "Files", fileHandler.UUID, fileHandler.Files[0].FileName), sicherheit);
 					CreateXMLFile(ziel, file);

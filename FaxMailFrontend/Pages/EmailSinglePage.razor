@@ -72,8 +72,7 @@
         <tr>
             <td><FileHandlerComponent fileHandler="@fileHandler" OnPathChanged="HandlePathNameChanged"></FileHandlerComponent></td>
                 <td style="width: 800px; height: 600px;">
-                @* <CentralComponent File="@selectedFile" OnFileUpdated="HandleFileUpdate"></CentralComponent>  *@
-                <TestComponent FH="fileHandler" OnFileHandlerChanged="HandleTestFilehandler"></TestComponent>
+                    <TestComponent FH="fileHandler" OnFileHandlerChanged="HandleTestFilehandler"></TestComponent>
                 </td>
             <td >
                 <ViewComponent GivenFile="@selectedFile" BasePath="@basePath" UUID="@fileHandler.UUID"></ViewComponent>
